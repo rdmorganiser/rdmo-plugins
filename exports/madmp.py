@@ -125,7 +125,6 @@ class MaDMPExport(Export):
 
                 dmp['contributor'].append(contributor)
 
-        dmp['cost'] = []
         for title, attribute in [
             ('Personal costs for data creation', 'project/costs/creation/personnel'),
             ('Non personal costs for data creation', 'project/costs/creation/non_personnel'),
@@ -148,39 +147,44 @@ class MaDMPExport(Export):
         ]:
             value = self.get_value(attribute)
             if value:
-                cost = {
+                dmp_cost = {
                     'title': title,
                     'value': value.text
                 }
 
                 if value.unit:
-                    cost['description'] = '{} in {}'.format(title, value.unit)
+                    dmp_cost['description'] = '{} in {}'.format(title, value.unit)
 
                 # this is a hack to make 'Euro' work
                 if value.unit.upper()[:3] in self.currency_codes:
-                    cost['currency_code'] = value.unit.upper()[:3]
+                    dmp_cost['currency_code'] = value.unit.upper()[:3]
 
-                dmp['cost'].append(cost)
+                if 'cost' in dmp:
+                    dmp['cost'].append(dmp_cost)
+                else:
+                    dmp['cost'] = [dmp_cost]
 
-        dmp['dataset'] = []
         for dataset in self.get_set('project/dataset/id'):
             dmp_dataset = {
-                'title': self.get_text('project/dataset/id', dataset.set_index)
+                'title': self.get_text('project/dataset/id', dataset.set_index) or 'Dataset #{}'.format(dataset.set_index + 1)
             }
 
+            # dmp/dataset/description
             description = self.get_text('project/dataset/description', dataset.set_index)
             if description:
                 dmp_dataset['description'] = description
 
+            # dmp/dataset/quality_assurance
             data_quality_assurance = self.get_text('project/dataset/quality_assurance', dataset.set_index)
             if data_quality_assurance:
                 dmp_dataset['data_quality_assurance'] = data_quality_assurance
 
+            # dmp/dataset/identifier
             dataset_identifier = self.get_text('project/dataset/dataset_identifier', dataset.set_index)
             if dataset_identifier:
                 dmp_dataset['dataset_id'] = {
                     'identifier': dataset_identifier,
-                    'type': self.get_text('project/dataset/dataset_identifier', dataset.set_index)
+                    'type': self.get_text('project/dataset/dataset_identifier', dataset.set_index) or 'doi'
                 }
             else:
                 dmp_dataset['dataset_id'] = {
@@ -191,90 +195,125 @@ class MaDMPExport(Export):
             # distribution during the project
             distribution_during = {}
 
-            distribution_during_access_url = self.get_text('project/dataset/storage/uri', dataset.set_index)
-            if distribution_during_access_url:
-                distribution_during['access_url'] = distribution_during_access_url
+            # dmp/dataset/distribution/access_url
+            access_url = self.get_text('project/dataset/storage/uri', dataset.set_index)
+            if access_url:
+                distribution_during['access_url'] = access_url
 
-            distribution_during_data_access = self.get_value('project/dataset/sharing/yesno', dataset.set_index)
-            if distribution_during_data_access:
-                option_path = distribution_during_data_access.option.path
-                distribution_during['data_access'] = self.data_access_options[option_path]
+            # dmp/dataset/distribution/data_access
+            data_access = self.get_value('project/dataset/sharing/yesno', dataset.set_index)
+            if data_access and data_access.option:
+                distribution_during['data_access'] = self.data_access_options[data_access.option.path]
 
-            value = self.get_value('project/dataset/format', dataset.set_index)
-            if value:
-                distribution_during['format'] = value.text
+            # dmp/dataset/distribution/format
+            dmp_format = self.get_text('project/dataset/format', dataset.set_index)
+            if dmp_format:
+                distribution_during['format'] = dmp_format
 
             if distribution_during:
-                if 'distribution' not in dmp_dataset:
-                    dmp_dataset['distribution'] = []
+                distribution_during['title'] = 'Storage during the project'
 
-                dmp_dataset['distribution'].append({
-                    'title': 'Storage during the project',
-                    **distribution_during
-                })
+                if 'distribution' in dmp_dataset:
+                    dmp_dataset['distribution'].append(distribution_during)
+                else:
+                    dmp_dataset['distribution'] = [distribution_during]
 
-            # distribution after the project
+            # dmp/dataset/distribution (after the project)
             distribution_after = {}
 
+            # dmp/dataset/distribution/certified_with
             certified_with = self.get_value('project/dataset/preservation/certification', dataset.set_index)
             if certified_with and certified_with.option:
                 distribution_after['certified_with'] = self.certified_with_options[certified_with.option.path]
 
+            # dmp/dataset/distribution/pid_system
             pid_system = self.get_value('project/dataset/pids/system', dataset.set_index)
             if pid_system and pid_system.option:
                 distribution_after['pid_system'] = self.pid_system_options[pid_system.option.path]
 
+            # dmp/dataset/distribution/host
             host_title = self.get_value('project/dataset/preservation/repository', dataset.set_index)
             if host_title:
                 distribution_after['host'] = {
                     'title': host_title.value
                 }
 
+            # dmp/dataset/distribution/license_ref
             license_ref = self.get_value('project/dataset/sharing/conditions', dataset.set_index)
             if license_ref and license_ref.option and license_ref.option.path in self.license_ref_options:
                 distribution_after['license'] = {
                     'license_ref': self.license_ref_options[license_ref.option.path]
                 }
 
-                start_date = self.get_value('project/dataset/data_publication_date', dataset.set_index)
-                if start_date.value:
-                    distribution_after['license']['start_date'] = start_date.value.isoformat()
+                start_date = self.get_timestamp('project/dataset/data_publication_date', dataset.set_index)
+                if start_date:
+                    distribution_after['license']['start_date'] = start_date
 
             if distribution_after:
-                if 'distribution' not in dmp_dataset:
-                    dmp_dataset['distribution'] = []
+                distribution_after['title'] = 'Preservation after the project'
 
-                dmp_dataset['distribution'].append({
-                    'title': 'Preservation after the project',
-                    **distribution_after
-                })
+                if 'distribution' in dmp_dataset:
+                    dmp_dataset['distribution'].append(distribution_after)
+                else:
+                    dmp_dataset['distribution'] = [distribution_after]
 
-            issued = self.get_value('project/dataset/data_publication_date', dataset.set_index)
-            if issued.value:
-                dmp_dataset['issued'] = issued.value.isoformat()
+            # dmp/dataset/issued
+            issued = self.get_timestamp('project/dataset/data_publication_date', dataset.set_index)
+            if issued:
+                dmp_dataset['issued'] = issued
 
+            # dmp/dataset/keywords
             keywords = [value.text for value in self.get_values('project/research_question/keywords')]
             if keywords:
                 dmp_dataset['keyword'] = ', '.join(keywords)
 
+            # dmp/dataset/personal_data
             personal_data = self.get_value('project/dataset/sensitive_data/personal_data_yesno/yesno', dataset.set_index)
             if personal_data:
                 dmp_dataset['personal_data'] = 'yes' if personal_data.text == '1' else 'No'
             else:
                 dmp_dataset['personal_data'] = 'unknown'
 
+            # dmp/dataset/preservation_statement
+            preservation_statement = self.get_text('project/dataset/preservation/purpose', dataset.set_index)
+            if preservation_statement:
+                dmp_dataset['preservation_statement'] = preservation_statement
+
+            # dmp/dataset/security_and_privacy
+            for title, attribute in [
+                ('Access permissions', 'project/dataset/data_security/access_permissions'),
+                ('Security measures', 'project/dataset/data_security/security_measures')
+            ]:
+                value = self.get_value(attribute)
+                if value:
+                    dmp_security_and_privacy = {
+                        'title': title,
+                        'description': value.text
+                    }
+
+                    if 'security_and_privacy' in dmp_dataset:
+                        dmp_dataset['security_and_privacy'].append(dmp_security_and_privacy)
+                    else:
+                        dmp_dataset['security_and_privacy'] = [dmp_security_and_privacy]
+
+            # dmp/dataset/sensitive_data
             sensitive_data = self.get_value('project/dataset/sensitive_data/personal_data/bdsg_3_9', dataset.set_index)
             if sensitive_data:
                 dmp_dataset['sensitive_data'] = 'yes' if sensitive_data.text == '1' else 'no'
             else:
                 dmp_dataset['sensitive_data'] = 'unknown'
 
-            preservation_statement = self.get_value('project/dataset/preservation/purpose', dataset.set_index)
-            if preservation_statement and preservation_statement.text:
-                dmp_dataset['preservation_statement'] = preservation_statement.text
+            # dmp/dataset/type
+            dmp_type = self.get_text('project/dataset/type', dataset.set_index)
+            if dmp_type:
+                dmp_dataset['type'] = dmp_type
 
-            dmp['dataset'].append(dmp_dataset)
+            if 'dataset' in dmp:
+                dmp['dataset'].append(dmp_dataset)
+            else:
+                dmp['dataset'] = [dmp_dataset]
 
+        # dmp/dataset/type
         dmp['project'] = [
             {
                 'title': self.project.title,
@@ -304,10 +343,10 @@ class MaDMPExport(Export):
         try:
             return self.get_values(path, set_index)[collection_index].text
         except IndexError:
-            return ''
+            return None
 
     def get_timestamp(self, path, set_index=0, collection_index=0):
         try:
             return self.get_values(path, set_index)[collection_index].value.isoformat()
-        except IndexError:
-            return ''
+        except (IndexError, AttributeError):
+            return None
