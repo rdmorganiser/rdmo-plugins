@@ -79,6 +79,7 @@ class MaDMPExport(Export):
     def render(self):
         self.values = self.project.values.filter(snapshot=self.snapshot)
 
+        # dmp/title, dmp/created, dmp/modified, dmp/language
         dmp = {
             'title': 'maDMP for {}'.format(self.project.title),
             'created': self.project.created.isoformat(),
@@ -86,6 +87,7 @@ class MaDMPExport(Export):
             # 'language': self.project.language
         }
 
+        # dmp/contact
         contact_name = self.get_value('project/dmp/contact/name')
         if contact_name:
             dmp['contact'] = {
@@ -97,34 +99,36 @@ class MaDMPExport(Export):
                 }
             }
 
-        dmp['contributor'] = []
-        for role, attribute in [
-            ('Contact person', 'project/partner/contact_person'),
-            ('Responsible for backup', 'project/dataset/data_security/backup_responsible'),
-            ('Responsible for metadata', 'project/dataset/metadata/responsible_person'),
-            ('Responsible for PIDs', 'project/dataset/pids/responsible_person'),
-            ('Responsible for preservation', 'project/preservation/responsible_person')
-        ]:
-            name = self.get_text(attribute + '/name')
-            if name:
-                contributor = {
-                    'role': role,
-                    'name': name
-                }
+        # dmp/contributor
+        for partner in self.get_set('project/partner/id'):
+            contributor = self.get_person('Contact person for {}'.format(partner.text), 'project/partner/contact_person', partner.set_index)
+            if contributor:
+                if 'contributor' in dmp:
+                    dmp['contributor'].append(contributor)
+                else:
+                    dmp['contributor'] = [contributor]
 
-                mbox = self.get_text(attribute + '/mbox')
-                if mbox:
-                    contributor['mbox'] = mbox
+        for dataset in self.get_set('project/dataset/id'):
+            for role, attribute in [
+                ('Responsible for backup for {}'.format(dataset.text), 'project/dataset/data_security/backup_responsible'),
+                ('Responsible for metadata for {}'.format(dataset.text), 'project/dataset/metadata/responsible_person'),
+                ('Responsible for PIDs for {}'.format(dataset.text), 'project/dataset/pids/responsible_person'),
+            ]:
+                contributor = self.get_person(role, attribute, dataset.set_index)
+                if contributor:
+                    if 'contributor' in dmp:
+                        dmp['contributor'].append(contributor)
+                    else:
+                        dmp['contributor'] = [contributor]
 
-                identifier = self.get_text(attribute + '/identifier')
-                if identifier:
-                    contributor['contributor_id'] = {
-                        'identifier': identifier,
-                        'type': self.get_text(attribute + '/identifier_type') or 'orcid'
-                    }
-
+        contributor = self.get_person('Responsible for preservation', 'project/preservation/responsible_person', partner.set_index)
+        if contributor:
+            if 'contributor' in dmp:
                 dmp['contributor'].append(contributor)
+            else:
+                dmp['contributor'] = [contributor]
 
+        # dmp/cost
         for title, attribute in [
             ('Personal costs for data creation', 'project/costs/creation/personnel'),
             ('Non personal costs for data creation', 'project/costs/creation/non_personnel'),
@@ -164,6 +168,7 @@ class MaDMPExport(Export):
                 else:
                     dmp['cost'] = [dmp_cost]
 
+        # dmp/dataset
         for dataset in self.get_set('project/dataset/id'):
             dmp_dataset = {
                 'title': self.get_text('project/dataset/id', dataset.set_index) or 'Dataset #{}'.format(dataset.set_index + 1)
@@ -308,12 +313,13 @@ class MaDMPExport(Export):
             if dmp_type:
                 dmp_dataset['type'] = dmp_type
 
+            # dmp/dataset
             if 'dataset' in dmp:
                 dmp['dataset'].append(dmp_dataset)
             else:
                 dmp['dataset'] = [dmp_dataset]
 
-        # dmp/dataset/type
+        # dmp/project
         dmp['project'] = [
             {
                 'title': self.project.title,
@@ -349,4 +355,27 @@ class MaDMPExport(Export):
         try:
             return self.get_values(path, set_index)[collection_index].value.isoformat()
         except (IndexError, AttributeError):
+            return None
+
+    def get_person(self, role, attribute, set_index=0):
+        name = self.get_text(attribute + '/name', set_index=set_index)
+        if name:
+            contributor = {
+                'role': role,
+                'name': name
+            }
+
+            mbox = self.get_text(attribute + '/mbox', set_index=set_index)
+            if mbox:
+                contributor['mbox'] = mbox
+
+            identifier = self.get_text(attribute + '/identifier', set_index=set_index)
+            if identifier:
+                contributor['contributor_id'] = {
+                    'identifier': identifier,
+                    'type': self.get_text(attribute + '/identifier_type', set_index=set_index) or 'orcid'
+                }
+
+            return contributor
+        else:
             return None
