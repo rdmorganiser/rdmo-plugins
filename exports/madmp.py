@@ -128,13 +128,13 @@ class MaDMPExport(Export):
     }
 
     def render(self):
-        return HttpResponse(json.dumps({
+        response = HttpResponse(json.dumps({
             'dmp': self.get_dmp()
         }, indent=2), content_type='application/json')
+        response['Content-Disposition'] = 'filename="%s.json"' % self.project.title
+        return response
 
     def get_dmp(self):
-        self.values = self.project.values.filter(snapshot=self.snapshot)
-
         # dmp/title, dmp/created, dmp/modified, dmp/language
         dmp = defaultdict(list)
         dmp.update({
@@ -411,46 +411,3 @@ class MaDMPExport(Export):
             dmp_dataset['type'] = dmp_type
 
         return dmp_dataset
-
-    def get_set(self, path):
-        return self.values.filter(attribute__path=path)
-
-    def get_values(self, path, set_index=0):
-        return self.values.filter(attribute__path=path, set_index=set_index)
-
-    def get_value(self, path, set_index=0, collection_index=0):
-        try:
-            return self.get_values(path, set_index)[collection_index]
-        except IndexError:
-            return None
-
-    def get_text(self, path, set_index=0, collection_index=0):
-        try:
-            return self.get_values(path, set_index)[collection_index].text
-        except IndexError:
-            return None
-
-    def get_timestamp(self, path, set_index=0, collection_index=0):
-        try:
-            return self.get_values(path, set_index)[collection_index].value.isoformat()
-        except (IndexError, AttributeError):
-            return None
-
-    def get_list(self, path, set_index=0):
-        values = self.get_values(path, set_index)
-        return [value.text for value in values if value.text]
-
-    def get_bool(self, path, set_index=0, collection_index=0):
-        value = self.get_value(path, set_index, collection_index)
-        if value:
-            return True if value.text == '1' else False
-        else:
-            return None
-
-    def get_option(self, options, path, set_index=0, collection_index=0, default=None):
-        value = self.get_value(path, set_index, collection_index)
-        if value and value.option:
-            # lookup option dict in class
-            return options.get(value.option.path, 'other')
-        else:
-            return default
