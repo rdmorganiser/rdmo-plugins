@@ -213,14 +213,17 @@ class MaDMPExport(Export):
         # dmp/dataset/ethical_issues_description
 
         # dmp/project
-        dmp['project'] = [
-            {
-                'title': self.project.title,
-                'description': self.project.description,
-                'start': self.get_timestamp('project/schedule/project_start'),
-                'end': self.get_timestamp('project/schedule/project_end')
-            }
-        ]
+        project_start = self.get_timestamp('project/schedule/project_start')
+        project_end = self.get_timestamp('project/schedule/project_end')
+        if project_start and project_end:
+            dmp['project'] = [
+                {
+                    'title': self.project.title,
+                    'description': self.project.description,
+                    'start': project_start,
+                    'end': project_end
+                }
+            ]
 
         return dmp
 
@@ -278,18 +281,15 @@ class MaDMPExport(Export):
     def get_dataset(self, dataset):
         dmp_dataset = defaultdict(list)
 
-        # dmp/dataset/title
-        dmp_dataset['title'] = self.get_text('project/dataset/id', dataset.set_index) or 'Dataset #{}'.format(dataset.set_index + 1)
+        # dmp/dataset/quality_assurance
+        data_quality_assurance = self.get_list('project/dataset/quality_assurance', dataset.set_index)
+        if data_quality_assurance:
+            dmp_dataset['data_quality_assurance'] = data_quality_assurance
 
         # dmp/dataset/description
         description = self.get_text('project/dataset/description', dataset.set_index)
         if description:
             dmp_dataset['description'] = description
-
-        # dmp/dataset/quality_assurance
-        data_quality_assurance = self.get_list('project/dataset/quality_assurance', dataset.set_index)
-        if data_quality_assurance:
-            dmp_dataset['data_quality_assurance'] = data_quality_assurance
 
         # dmp/dataset/identifier
         dataset_identifier = self.get_text('project/dataset/dataset_identifier', dataset.set_index)
@@ -332,7 +332,7 @@ class MaDMPExport(Export):
         distribution_after = {}
 
         # dmp/dataset/distribution/data_access
-        distribution_after['data_access'] = 'open' if (distribution_during['data_access'] == 'open') else 'closed'
+        distribution_after['data_access'] = 'open' if (distribution_during.get('data_access') == 'open') else 'closed'
 
         # dmp/dataset/distribution/certified_with
         certified_with = self.get_option(self.certified_with_options, 'project/dataset/preservation/certification', dataset.set_index)
@@ -409,5 +409,8 @@ class MaDMPExport(Export):
         dmp_type = self.get_text('project/dataset/type', dataset.set_index)
         if dmp_type:
             dmp_dataset['type'] = dmp_type
+
+        # dmp/dataset/title
+        dmp_dataset['title'] = self.get_text('project/dataset/id', dataset.set_index) or 'Dataset #{}'.format(dataset.set_index + 1)
 
         return dmp_dataset
