@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from django.http import HttpResponse
+
 from rdmo.core.exports import prettify_xml
 from rdmo.core.renderers import BaseXMLRenderer
 from rdmo.projects.exports import Export
@@ -152,7 +153,7 @@ class DataCiteExport(Export):
 
             # subjects
             xml.startElement('subjects', {})
-            for subject in dataset.get('subjects'):
+            for subject in dataset.get('subjects', []):
                 self.render_text_element(xml, 'subject', {}, subject)
             xml.endElement('subjects')
 
@@ -276,7 +277,7 @@ class DataCiteExport(Export):
                 dataset['identifier'] = identifier
                 dataset['identifierType'] = \
                     self.get_option(self.identifier_type_options, 'project/dataset/identifier_type', set_index=index) or \
-                    self.get_option(self.identifier_type_options, 'dataset/pids/system', set_index=index) or \
+                    self.get_option(self.identifier_type_options, 'project/dataset/pids/system', set_index=index) or \
                     'OTHER'
             else:
                 dataset['identifier'] = self.get_text('project/dataset/id')
@@ -342,14 +343,14 @@ class DataCiteExport(Export):
                 })
 
             # description
-            dataset['description'] = self.project.description
+            dataset['description'] = self.get_text('project/dataset/description', index)
 
             # funding_references
             for funder in self.get_values('project/funder'):
                 dataset['funding_reference'].append({
                     'funderName': self.get_text('project/funder/name', funder.index),
                     'funderIdentifier': self.get_text('project/funder/identifier', funder.index),
-                    'funderIdentifierType': self.get_text('project/funder/identifier/type', funder.index),
+                    'funderIdentifierType': self.get_text('project/funder/identifier_type', funder.index),
                     'awardURI': self.get_text('project/funder/award_uri', funder.index),
                     'awardNumber': self.get_text('project/funder/award_number', funder.index),
                     'awardTitle': self.get_text('project/funder/award_title', funder.index)

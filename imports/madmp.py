@@ -15,8 +15,6 @@ class MaDMPImport(Import):
     }
 
     def check(self):
-        with open(self.file_name) as f:
-            data = json.loads(f.read())
         if mimetypes.guess_type('application/json'):
             try:
                 with open(self.file_name) as f:
