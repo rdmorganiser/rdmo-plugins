@@ -2,6 +2,7 @@ import json
 import mimetypes
 
 from rdmo.domain.models import Attribute
+from rdmo.options.models import Option
 from rdmo.projects.imports import Import
 from rdmo.projects.models import Project, Value
 from rdmo.questions.models import Catalog
@@ -12,6 +13,11 @@ class MaDMPImport(Import):
     yes_no = {
         'yes': '1',
         'no': '0'
+    }
+
+    language_options = {
+        # 'eng': '',
+        # 'deu': ''
     }
 
     def check(self):
@@ -120,6 +126,16 @@ class MaDMPImport(Import):
                     text=text
                 ))
 
+            # dmp/dataset/language
+            if dmp_dataset.get('language'):
+                attribute = self.get_attribute(path='project/dataset/language')
+                option = self.get_option(self.language_options.get(self.dmp_dataset.get('language')))
+                values.append(Value(
+                    attribute=attribute,
+                    set_index=set_index,
+                    option=option
+                ))
+
             # dmp/dataset/personal_data
             if dmp_dataset.get('personal_data'):
                 attribute = self.get_attribute(path='project/dataset/sensitive_data/personal_data_yesno/yesno')
@@ -189,16 +205,21 @@ class MaDMPImport(Import):
         if self.dmp.get('ethical_issues_description'):
             values.append(Value(
                 attribute=self.get_attribute(path='project/ethical_issues/description'),
-                set_index=set_index,
-                text=dmp_id.get('ethical_issues_description')
+                text=self.dmp.get('ethical_issues_description')
             ))
 
         # dmp/ethical_issues_exist
         if self.dmp.get('ethical_issues_exist'):
             values.append(Value(
                 attribute=self.get_attribute(path='project/ethical_issues/exists'),
-                set_index=set_index,
-                text=dmp_id.get('ethical_issues_exist')
+                text=self.dmp.get('ethical_issues_exist')
+            ))
+
+        # dmp/language
+        if self.dmp.get('language'):
+            values.append(Value(
+                attribute=self.get_attribute(path='project/language'),
+                option=self.get_option(self.language_options.get(self.dmp.get('language')))
             ))
 
         # dmp/project
@@ -228,4 +249,10 @@ class MaDMPImport(Import):
         try:
             return Attribute.objects.get(path=path)
         except Attribute.DoesNotExist:
+            return None
+
+    def get_option(self, path):
+        try:
+            return Option.objects.get(path=path)
+        except Option.DoesNotExist:
             return None

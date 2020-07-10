@@ -27,7 +27,7 @@ class MaDMPExport(Export):
         "ZMW", "ZWD"
     ]
 
-    languages = {
+    language_options = {
         # '': 'eng',
         # '': 'deu'
     }
