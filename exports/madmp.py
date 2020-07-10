@@ -2,7 +2,6 @@ import json
 from collections import defaultdict
 
 from django.http import HttpResponse
-
 from rdmo.projects.exports import Export
 
 
@@ -29,8 +28,8 @@ class MaDMPExport(Export):
     ]
 
     languages = {
-        'en': 'eng',
-        'de': 'deu'
+        # '': 'eng',
+        # '': 'deu'
     }
 
     data_access_options = {
@@ -141,8 +140,6 @@ class MaDMPExport(Export):
             'title': 'maDMP for {}'.format(self.project.title),
             'created': self.project.created.isoformat(),
             'modified': self.project.updated.isoformat(),
-            'language': self.languages['en']
-            # 'language': self.languages[self.project.language]
         })
 
         # dmp/contact
@@ -211,6 +208,11 @@ class MaDMPExport(Export):
             }
 
         # dmp/dataset/ethical_issues_description
+
+        # dmp/language
+        language = self.get_option(self.language_options, 'project/language')
+        if language:
+            dmp['language'] = language
 
         # dmp/project
         project_start = self.get_timestamp('project/schedule/project_start')
@@ -375,10 +377,15 @@ class MaDMPExport(Export):
         if issued:
             dmp_dataset['issued'] = issued
 
-        # dmp/dataset/keywords
+        # dmp/dataset/keyword
         keywords = self.get_list('project/research_question/keywords')
         if keywords:
             dmp_dataset['keyword'] = keywords
+
+        # dmp/dataset/language
+        language = self.get_option(self.language_options, 'project/dataset/language', dataset.set_index)
+        if language:
+            dmp_dataset['language'] = language
 
         # dmp/dataset/personal_data
         personal_data = self.get_bool('project/dataset/sensitive_data/personal_data_yesno/yesno', dataset.set_index)
