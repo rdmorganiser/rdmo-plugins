@@ -142,6 +142,17 @@ class RadarImport(Import):
                 text=description_node.text
             ))
 
+        # keywords
+        keyword_nodes = self.root.findall("./ns1:keywords/ns1:keyword", self.ns_map)
+        if keyword_nodes is not None:
+            for collection_index, keyword_node in enumerate(keyword_nodes):
+                self.values.append(self.get_value(
+                    attribute=self.get_attribute(path='project/dataset/keyword'),
+                    set_index=set_index,
+                    collection_index=collection_index,
+                    text=keyword_node.text
+                ))
+
     def get_attribute(self, path):
         try:
             return Attribute.objects.get(path=path)

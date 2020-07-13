@@ -364,11 +364,11 @@ class RadarExport(Export):
                 xml.endElement('software')
 
             # processing
-            processing = dataset.get('processing')
-            if processing:
+            processing_list = dataset.get('dataProcessing')
+            if processing_list:
                 xml.startElement('processing', {})
-                for processing in processing:
-                    self.render_text_element(xml, 'dataProcessing', {}, processing.get('dataProcessing'))
+                for processing in processing_list:
+                    self.render_text_element(xml, 'dataProcessing', {}, processing)
                 xml.endElement('processing')
 
             # relatedInformations
@@ -481,7 +481,7 @@ class RadarExport(Export):
                         'additionalSubjectAreaName': subject_area.value
                     })
 
-            # resource_type
+            # resource
             resource_type = self.get_text('project/dataset/resource_type', index)
             if resource_type:
                 dataset['resourceType'] = resource_type
@@ -498,7 +498,6 @@ class RadarExport(Export):
                     else:
                         controlled_rights = 'Other'
 
-                    option = rights.option
                     dataset['rights'].append({
                         'controlledRights': controlled_rights,
                         'additionalRights': rights.value if controlled_rights == 'Other' else None
@@ -534,11 +533,10 @@ class RadarExport(Export):
                     'dataSourceType': self.get_option(self.data_source_options, 'project/dataset/data_source_type', index)
                 }]
 
-            # software
-
             # dataProcessing
-
-            # relatedInformations
+            data_processing = self.get_list('project/dataset/data_processing', index)
+            if data_processing:
+                dataset['dataProcessing'] = data_processing
 
             # funding_references
             dataset['fundingReferences'] = []
