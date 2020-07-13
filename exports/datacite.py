@@ -1,7 +1,7 @@
+import zipfile
 from collections import defaultdict
 
 from django.http import HttpResponse
-
 from rdmo.core.exports import prettify_xml
 from rdmo.core.renderers import BaseXMLRenderer
 from rdmo.projects.exports import Export
@@ -88,18 +88,9 @@ class DataCiteExport(Export):
         'dataset_license_types/cc0': 'https://creativecommons.org/publicdomain/zero/1.0/deed.de'
     }
 
-    class DataCiteRenderer(BaseXMLRenderer):
+    class Renderer(BaseXMLRenderer):
 
-        def render_document(self, xml, datasets):
-            self.render_resources(xml, datasets)
-
-        def render_resources(self, xml, datasets):
-            xml.startElement('resources', {})
-            for dataset in datasets:
-                self.render_resource(xml, dataset)
-            xml.endElement('resources')
-
-        def render_resource(self, xml, dataset):
+        def render_document(self, xml, dataset):
             xml.startElement('resource', {
                 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
                 'xmlns': 'http://datacite.org/schema/kernel-4',
@@ -107,162 +98,202 @@ class DataCiteExport(Export):
             })
 
             # identifier
-            self.render_text_element(xml, 'identifier', {
-                'identifierType': dataset.get('identifierType', 'OTHER')
-            }, dataset.get('identifier'))
+            identifier = dataset.get('identifier')
+            if identifier:
+                self.render_text_element(xml, 'identifier', {
+                    'identifierType': dataset.get('identifierType', 'OTHER')
+                }, identifier)
 
             # creators
-            xml.startElement('creators', {})
-            for creator in dataset.get('creators', []):
-                xml.startElement('creator', {})
-                self.render_text_element(xml, 'creatorName', {
-                    'nameType': creator.get('nameType')
-                }, creator.get('name'))
+            creators = dataset.get('creators')
+            if creators:
+                xml.startElement('creators', {})
+                for creator in creators:
+                    xml.startElement('creator', {})
+                    self.render_text_element(xml, 'creatorName', {
+                        'nameType': creator.get('nameType')
+                    }, creator.get('name'))
 
-                if creator.get('givenName'):
-                    self.render_text_element(xml, 'givenName', {}, creator.get('givenName'))
+                    if creator.get('givenName'):
+                        self.render_text_element(xml, 'givenName', {}, creator.get('givenName'))
 
-                if creator.get('familyName'):
-                    self.render_text_element(xml, 'familyName', {}, creator.get('familyName'))
+                    if creator.get('familyName'):
+                        self.render_text_element(xml, 'familyName', {}, creator.get('familyName'))
 
-                if creator.get('nameIdentifier'):
-                    self.render_text_element(xml, 'nameIdentifier', {
-                        'nameIdentifierScheme': creator.get('nameIdentifierScheme'),
-                        'schemeURI': self.scheme_uri.get(creator.get('schemeURI')),
-                    }, creator.get('nameIdentifier'))
+                    if creator.get('nameIdentifier'):
+                        self.render_text_element(xml, 'nameIdentifier', {
+                            'nameIdentifierScheme': creator.get('nameIdentifierScheme'),
+                            'schemeURI': self.scheme_uri.get(creator.get('schemeURI')),
+                        }, creator.get('nameIdentifier'))
 
-                for affiliation in creator.get('affiliations', []):
-                    self.render_node('affiliation', {
-                        'affiliationIdentifier': affiliation.get('affiliationIdentifier'),
-                        'affiliationIdentifierScheme': affiliation.get('affiliationIdentifierScheme')
-                    }, affiliation.get('affiliation'))
+                    for affiliation in creator.get('affiliations', []):
+                        self.render_node('affiliation', {
+                            'affiliationIdentifier': affiliation.get('affiliationIdentifier'),
+                            'affiliationIdentifierScheme': affiliation.get('affiliationIdentifierScheme')
+                        }, affiliation.get('affiliation'))
 
-                xml.endElement('creator')
-            xml.endElement('creators')
+                    xml.endElement('creator')
+                xml.endElement('creators')
 
             # titles
-            xml.startElement('titles', {})
-            self.render_text_element(xml, 'title', {}, dataset.get('title'))
-            xml.endElement('titles')
+            titles = dataset.get('title')
+            if titles:
+                xml.startElement('titles', {})
+                for title in titles:
+                    self.render_text_element(xml, 'title', {
+                        'titleType': title.get('titleType')
+                    }, title.get('title'))
+                xml.endElement('titles')
 
             # publisher
-            self.render_text_element(xml, 'publisher', {}, dataset.get('publisher'))
+            publisher = dataset.get('publisher')
+            if publisher:
+                self.render_text_element(xml, 'publisher', {}, publisher)
 
             # publicationYear
-            self.render_text_element(xml, 'publicationYear', {}, dataset.get('publicationYear'))
+            publication_year = dataset.get('publicationYear')
+            if publication_year:
+                self.render_text_element(xml, 'publicationYear', {}, publication_year)
 
             # subjects
-            xml.startElement('subjects', {})
-            for subject in dataset.get('subjects', []):
-                self.render_text_element(xml, 'subject', {}, subject)
-            xml.endElement('subjects')
+            subjects = dataset.get('subjects')
+            if subjects:
+                xml.startElement('subjects', {})
+                for subject in subjects:
+                    self.render_text_element(xml, 'subject', {
+                        'subjectScheme': subject.get('subjectScheme'),
+                        'schemeURI': subject.get('schemeURI')
+                    }, subject.get('subject'))
+                xml.endElement('subjects')
 
             # contributors
-            xml.startElement('contributors', {})
-            for contributor in dataset.get('contributors', []):
-                xml.startElement('contributor', {})
-                self.render_text_element(xml, 'contributorName', {
-                    'nameType': contributor.get('nameType')
-                }, contributor.get('name'))
+            contributors = dataset.get('contributors')
+            if contributors:
+                xml.startElement('contributors', {})
+                for contributor in dataset.get('contributors', []):
+                    xml.startElement('contributor', {})
+                    self.render_text_element(xml, 'contributorName', {
+                        'nameType': contributor.get('nameType')
+                    }, contributor.get('name'))
 
-                if contributor.get('givenName'):
-                    self.render_text_element(xml, 'givenName', {}, contributor.get('givenName'))
+                    if contributor.get('givenName'):
+                        self.render_text_element(xml, 'givenName', {}, contributor.get('givenName'))
 
-                if contributor.get('familyName'):
-                    self.render_text_element(xml, 'familyName', {}, contributor.get('familyName'))
+                    if contributor.get('familyName'):
+                        self.render_text_element(xml, 'familyName', {}, contributor.get('familyName'))
 
-                if contributor.get('nameIdentifier'):
-                    self.render_text_element(xml, 'nameIdentifier', {
-                        'nameIdentifierScheme': contributor.get('nameIdentifierScheme'),
-                        'schemeURI': self.scheme_uri.get(contributor.get('schemeURI')),
-                    }, contributor.get('nameIdentifier'))
+                    if contributor.get('nameIdentifier'):
+                        self.render_text_element(xml, 'nameIdentifier', {
+                            'nameIdentifierScheme': contributor.get('nameIdentifierScheme'),
+                            'schemeURI': self.scheme_uri.get(contributor.get('schemeURI')),
+                        }, contributor.get('nameIdentifier'))
 
-                for affiliation in contributor.get('affiliations', []):
-                    self.render_node('affiliation', {
-                        'affiliationIdentifier': affiliation.get('affiliationIdentifier'),
-                        'affiliationIdentifierScheme': affiliation.get('affiliationIdentifierScheme')
-                    }, affiliation.get('affiliation'))
+                    for affiliation in contributor.get('affiliations', []):
+                        self.render_node('affiliation', {
+                            'affiliationIdentifier': affiliation.get('affiliationIdentifier'),
+                            'affiliationIdentifierScheme': affiliation.get('affiliationIdentifierScheme')
+                        }, affiliation.get('affiliation'))
 
-                xml.endElement('contributor')
-            xml.endElement('contributors')
+                    xml.endElement('contributor')
+                xml.endElement('contributors')
 
             # dates
-            xml.startElement('dates', {})
-            if dataset.get('created'):
-                self.render_text_element(xml, 'date', {
-                    'dateType': 'Created'
-                }, dataset.get('created'))
-            if dataset.get('issued'):
-                self.render_text_element(xml, 'date', {
-                    'dateType': 'Issued'
-                }, dataset.get('issued'))
-            xml.endElement('dates')
+            created = dataset.get('created')
+            issued = dataset.get('issued')
+            if created or issued:
+                xml.startElement('dates', {})
+                if created:
+                    self.render_text_element(xml, 'date', {
+                        'dateType': 'Created'
+                    }, created)
+                if issued:
+                    self.render_text_element(xml, 'date', {
+                        'dateType': 'Issued'
+                    }, issued)
+                xml.endElement('dates')
 
             # language
-            self.render_text_element(xml, 'language', {}, dataset.get('language'))
+            language = dataset.get('language')
+            if language:
+                self.render_text_element(xml, 'language', {}, language)
 
             # resource_type
-            if dataset.get('resourceType'):
+            resource_type = dataset.get('resourceType')
+            if resource_type:
                 self.render_text_element(xml, 'resourceType', {
                     'resourceTypeGeneral': dataset.get('resourceTypeGeneral')
-                }, dataset.get('resourceType'))
+                }, resource_type)
 
-            # alternate_identifiers
-            xml.startElement('alternateIdentifiers', {})
-            for alternate_identifier in dataset.get('alternateIdentifiers', []):
-                self.render_text_element(xml, 'alternateIdentifier', {
-                    'alternateIdentifierType': dataset.get('alternateIdentifierType')
-                }, alternate_identifier.get('alternateIdentifier'))
-            xml.endElement('alternateIdentifiers')
+            # alternateIdentifiers
+            alternate_identifiers = dataset.get('alternateIdentifiers')
+            if alternate_identifiers:
+                xml.startElement('alternateIdentifiers', {})
+                for alternate_identifier in alternate_identifiers:
+                    self.render_text_element(xml, 'alternateIdentifier', {
+                        'alternateIdentifierType': dataset.get('alternateIdentifierType')
+                    }, alternate_identifier.get('alternateIdentifier'))
+                xml.endElement('alternateIdentifiers')
 
             # related_identifiers
-            xml.startElement('relatedIdentifiers', {})
-            for related_identifier in dataset.get('relatedIdentifiers', []):
-                self.render_text_element(xml, 'relatedIdentifier', {
-                    'relatedIdentifierType': related_identifier.get('relatedIdentifierType'),
-                    'relationType': related_identifier.get('relationType')
-                }, related_identifier.get('relatedIdentifier'))
-            xml.endElement('relatedIdentifiers')
+            related_identifiers = dataset.get('relatedIdentifiers')
+            if related_identifiers:
+                xml.startElement('relatedIdentifiers', {})
+                for related_identifier in related_identifiers:
+                    self.render_text_element(xml, 'relatedIdentifier', {
+                        'relatedIdentifierType': related_identifier.get('relatedIdentifierType'),
+                        'relationType': related_identifier.get('relationType')
+                    }, related_identifier.get('relatedIdentifier'))
+                xml.endElement('relatedIdentifiers')
 
             # rights list
-            xml.startElement('rightsList', {})
-            for rights in dataset.get('rightsList', []):
-                self.render_text_element(xml, 'rights', {
-                    'rightsURI': rights.get('rightsURI')
-                }, rights.get('rights'))
-            xml.endElement('rightsList')
+            rights_list = dataset.get('rightsList')
+            if rights_list:
+                xml.startElement('rightsList', {})
+                for rights in rights_list:
+                    self.render_text_element(xml, 'rights', {
+                        'rightsURI': rights.get('rightsURI')
+                    }, rights.get('rights'))
+                xml.endElement('rightsList')
 
             # descriptions
-            xml.startElement('descriptions', {})
-            if dataset.get('description'):
-                self.render_text_element(xml, 'description', {
-                    'descriptionType': 'Abstract'
-                }, dataset.get('description'))
-            xml.endElement('descriptions')
+            descriptions = dataset.get('descriptions')
+            if descriptions:
+                xml.startElement('descriptions', {})
+                for description in descriptions:
+                    self.render_text_element(xml, 'description', {
+                        'descriptionType': description.get('descriptionType', 'Abstract')
+                    }, description.get('description'))
+                xml.endElement('descriptions')
 
             # funding_references
-            xml.startElement('fundingReferences', {})
-            for funding_reference in dataset.get('fundingReferences', []):
-                xml.startElement('fundingReference', {})
-                self.render_text_element(xml, 'funderName', {}, funding_reference.get('funderName'))
-                self.render_text_element(xml, 'funderIdentifier', {
-                    'schemeURI': self.scheme_uri.get(funding_reference.get('funderIdentifierType')),
-                    'funderIdentifierType': funding_reference.get('funderIdentifierType')
-                }, funding_reference.get('funderIdentifier'))
-                self.render_text_element(xml, 'awardNumber', {
-                    'awardURI': funding_reference.get('awardURI')
-                }, funding_reference.get('awardNumber'))
-                self.render_text_element(xml, 'awardTitle', {}, funding_reference.get('awardTitle'))
-                xml.endElement('fundingReference')
-            xml.endElement('fundingReferences')
+            funding_references = dataset.get('fundingReferences')
+            if funding_references:
+                xml.startElement('fundingReferences', {})
+                for funding_reference in funding_references:
+                    xml.startElement('fundingReference', {})
+                    self.render_text_element(xml, 'funderName', {}, funding_reference.get('funderName'))
+                    self.render_text_element(xml, 'funderIdentifier', {
+                        'schemeURI': self.scheme_uri.get(funding_reference.get('funderIdentifierType')),
+                        'funderIdentifierType': funding_reference.get('funderIdentifierType')
+                    }, funding_reference.get('funderIdentifier'))
+                    self.render_text_element(xml, 'awardNumber', {
+                        'awardURI': funding_reference.get('awardURI')
+                    }, funding_reference.get('awardNumber'))
+                    self.render_text_element(xml, 'awardTitle', {}, funding_reference.get('awardTitle'))
+                    xml.endElement('fundingReference')
+                xml.endElement('fundingReferences')
 
             xml.endElement('resource')
 
     def render(self):
-        datasets = self.get_datasets()
-        xmldata = self.DataCiteRenderer().render(datasets)
-        response = HttpResponse(prettify_xml(xmldata), content_type="application/xml")
-        response['Content-Disposition'] = 'filename="%s.xml"' % self.project.title
+        response = HttpResponse(content_type='application/zip')
+        response['Content-Disposition'] = 'filename="%s.zip"' % self.project.title
+
+        zip_file = zipfile.ZipFile(response, 'w')
+        for dataset in self.get_datasets():
+            xmldata = self.Renderer().render(dataset)
+            zip_file.writestr(dataset.get('file_name'), prettify_xml(xmldata))
+
         return response
 
     def get_datasets(self):
@@ -270,6 +301,13 @@ class DataCiteExport(Export):
         for rdmo_dataset in self.get_set('project/dataset/id'):
             index = rdmo_dataset.set_index
             dataset = defaultdict(list)
+
+            # file_name
+            dataset['file_name'] = '{}.xml'.format(
+                self.get_text('project/dataset/identifier', index) or
+                self.get_text('project/dataset/id', index) or
+                str(index + 1)
+            )
 
             # identifier
             identifier = self.get_text('project/dataset/identifier', set_index=index)
@@ -290,10 +328,12 @@ class DataCiteExport(Export):
                     dataset['creators'].append(creator)
 
             # titles
-            dataset['title'] =  \
-                self.get_text('project/dataset/title', index) or \
-                self.get_text('project/dataset/id', index) or \
-                'Dataset #{}'.format(index + 1)
+            dataset['titles'] = {
+                'title':
+                    self.get_text('project/dataset/title', index) or
+                    self.get_text('project/dataset/id', index) or
+                    'Dataset #{}'.format(index + 1)
+            }
 
             # publisher
             publisher = \
@@ -310,7 +350,9 @@ class DataCiteExport(Export):
                 self.get_values('project/dataset/research/subject', index) or \
                 self.get_values('project/research_field/title')
             if subjects:
-                dataset['subjects'] = [subject.value for subject in subjects]
+                dataset['subjects'] = [{
+                    'subject': subject.value
+                } for subject in subjects]
 
             # contributors
             for contributor_name in self.get_values('project/dataset/contributor/name', index):
@@ -336,14 +378,19 @@ class DataCiteExport(Export):
                     self.get_option(self.resource_type_general_options, 'project/dataset/resource_type_general', index)
 
             # rights
-            for value in self.get_values('project/dataset/sharing/conditions', index):
+            for rights in self.get_values('project/dataset/sharing/conditions', index):
                 dataset['rights_list'].append({
-                    'rights': value.value,
-                    'rightsURI': self.rights_uri_options[value.option.path]
+                    'rights': rights.value,
+                    'rightsURI': self.rights_uri_options.get(rights.option.path)
                 })
 
             # description
-            dataset['description'] = self.get_text('project/dataset/description', index)
+            description = self.get_text('project/dataset/description', index)
+            if description:
+                dataset['descriptions'] = [{
+                    'description': description,
+                    'descriptionType': 'Abstract'
+                }]
 
             # funding_references
             for funder in self.get_values('project/funder'):

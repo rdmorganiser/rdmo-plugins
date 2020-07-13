@@ -1,3 +1,4 @@
+import zipfile
 from collections import defaultdict
 
 from django.http import HttpResponse
@@ -145,16 +146,7 @@ class RadarExport(Export):
 
     class Renderer(BaseXMLRenderer):
 
-        def render_document(self, xml, datasets):
-            self.render_resources(xml, datasets)
-
-        def render_resources(self, xml, datasets):
-            xml.startElement('resources', {})
-            for dataset in datasets:
-                self.render_resource(xml, dataset)
-            xml.endElement('resources')
-
-        def render_resource(self, xml, dataset):
+        def render_document(self, xml, dataset):
             xml.startElement('ns2:radarDataset', {
                 'xmlns': 'http://radar-service.eu/schemas/descriptive/radar/v09/radar-elements',
                 'xmlns:ns2': 'http://radar-service.eu/schemas/descriptive/radar/v09/radar-dataset'
@@ -410,10 +402,14 @@ class RadarExport(Export):
             xml.endElement('ns2:radarDataset')
 
     def render(self):
-        datasets = self.get_datasets()
-        xmldata = self.Renderer().render(datasets)
-        response = HttpResponse(prettify_xml(xmldata), content_type="application/xml")
-        response['Content-Disposition'] = 'filename="%s.xml"' % self.project.title
+        response = HttpResponse(content_type='application/zip')
+        response['Content-Disposition'] = 'filename="%s.zip"' % self.project.title
+
+        zip_file = zipfile.ZipFile(response, 'w')
+        for dataset in self.get_datasets():
+            xmldata = self.Renderer().render(dataset)
+            zip_file.writestr(dataset.get('file_name'), prettify_xml(xmldata))
+
         return response
 
     def get_datasets(self):
@@ -421,6 +417,13 @@ class RadarExport(Export):
         for rdmo_dataset in self.get_set('project/dataset/id'):
             index = rdmo_dataset.set_index
             dataset = defaultdict(list)
+
+            # file_name
+            dataset['file_name'] = '{}.xml'.format(
+                self.get_text('project/dataset/identifier', index) or
+                self.get_text('project/dataset/id', index) or
+                str(index + 1)
+            )
 
             # identifier
             identifier = self.get_text('project/dataset/identifier', set_index=index)
