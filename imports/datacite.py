@@ -16,11 +16,7 @@ class DataCiteImport(Import):
             self.root = read_xml_file(self.file_name)
             if self.root:
                 self.ns_map = get_ns_map(self.root)
-                if self.root.tag == 'resources':
-                    self.resources = self.root
-                    return True
-                elif self.root.tag == '{{{ns0}}}resource'.format(**self.ns_map):
-                    self.resources = [self.root]
+                if self.root.tag == '{{{ns0}}}resource'.format(**self.ns_map):
                     return True
 
     def process(self):
@@ -36,133 +32,134 @@ class DataCiteImport(Import):
         )
 
         # get maximum set_index to only append datasets
-        maximum_set_index = max([d.set_index for d in current_datasets])
+        try:
+            set_index = max([d.set_index for d in current_datasets]) + 1
+        except ValueError:
+            set_index = 0
 
-        # loop over imported resources, but start set index at maximum_set_index + 1
-        for set_index, resource in enumerate(self.resources, maximum_set_index + 1):
-            # identifier
-            identifier_node = resource.find('./ns0:identifier', self.ns_map)
-            if identifier_node is not None:
-                self.values.append(self.get_value(
-                    attribute=self.get_attribute(path='project/dataset/identifier'),
-                    set_index=set_index,
-                    text=identifier_node.text
-                ))
+        # identifier
+        identifier_node = self.root.find('./ns0:identifier', self.ns_map)
+        if identifier_node is not None:
+            self.values.append(self.get_value(
+                attribute=self.get_attribute(path='project/dataset/identifier'),
+                set_index=set_index,
+                text=identifier_node.text
+            ))
 
-                # identifierType
-                self.values.append(self.get_value(
-                    attribute=self.get_attribute(path='project/dataset/identifier_type'),
-                    set_index=set_index,
-                    text=identifier_node.attrib.get('identifierType', 'DOI')
-                ))
+            # identifierType
+            self.values.append(self.get_value(
+                attribute=self.get_attribute(path='project/dataset/identifier_type'),
+                set_index=set_index,
+                text=identifier_node.attrib.get('identifierType', 'DOI')
+            ))
 
-            # first creator name
-            creator_node = resource.find('./ns0:creators/ns0:creator/ns0:creatorName', self.ns_map)
-            if creator_node is not None:
-                self.values.append(self.get_value(
-                    attribute=self.get_attribute(path='project/dataset/creator/name'),
-                    set_index=set_index,
-                    text=creator_node.text
-                ))
+        # first creator name
+        creator_node = self.root.find('./ns0:creators/ns0:creator/ns0:creatorName', self.ns_map)
+        if creator_node is not None:
+            self.values.append(self.get_value(
+                attribute=self.get_attribute(path='project/dataset/creator/name'),
+                set_index=set_index,
+                text=creator_node.text
+            ))
 
-            # title
-            title_node = resource.find('./ns0:titles/ns0:title', self.ns_map)
-            if title_node is not None:
-                attribute = self.get_attribute(path='project/dataset/id')
-                self.values.append(self.get_value(
-                    attribute=attribute,
-                    set_index=set_index,
-                    text=title_node.text
-                ))
+        # title
+        title_node = self.root.find('./ns0:titles/ns0:title', self.ns_map)
+        if title_node is not None:
+            attribute = self.get_attribute(path='project/dataset/id')
+            self.values.append(self.get_value(
+                attribute=attribute,
+                set_index=set_index,
+                text=title_node.text
+            ))
 
-            # publisher
-            publisher_node = resource.find('./ns0:publisher', self.ns_map)
-            if publisher_node is not None:
-                attribute = \
-                    self.get_attribute(path='project/dataset/publisher') or \
-                    self.get_attribute(path='project/dataset/preservation/repository')
-                self.values.append(self.get_value(
-                    attribute=attribute,
-                    set_index=set_index,
-                    text=publisher_node.text
-                ))
+        # publisher
+        publisher_node = self.root.find('./ns0:publisher', self.ns_map)
+        if publisher_node is not None:
+            attribute = \
+                self.get_attribute(path='project/dataset/publisher') or \
+                self.get_attribute(path='project/dataset/preservation/repository')
+            self.values.append(self.get_value(
+                attribute=attribute,
+                set_index=set_index,
+                text=publisher_node.text
+            ))
 
-            # subjects
-            subject_nodes = resource.find('./ns0:subjects/ns0:subject', self.ns_map)
-            for collection_index, subject_node in enumerate(subject_nodes):
-                if subject_node is not None:
-                    attribute = self.get_attribute(path='project/dataset/subject')
-                    self.values.append(self.get_value(
-                        attribute=attribute,
-                        set_index=set_index,
-                        collection_index=collection_index,
-                        text=subject_node.text
-                    ))
-
-            # dates
-            created_node = resource.find("./ns0:dates/ns0:date[@dateType='Created']", self.ns_map)
-            if created_node is not None:
-                attribute = self.get_attribute(path='project/dataset/created')
+        # subjects
+        subject_nodes = self.root.find('./ns0:subjects/ns0:subject', self.ns_map)
+        for collection_index, subject_node in enumerate(subject_nodes):
+            if subject_node is not None:
+                attribute = self.get_attribute(path='project/dataset/subject')
                 self.values.append(self.get_value(
                     attribute=attribute,
                     set_index=set_index,
-                    text=created_node.text
+                    collection_index=collection_index,
+                    text=subject_node.text
                 ))
-            issued_node = resource.find("./ns0:dates/ns0:date[@dateType='Issued']", self.ns_map)
-            if issued_node is not None:
+
+        # dates
+        created_node = self.root.find("./ns0:dates/ns0:date[@dateType='Created']", self.ns_map)
+        if created_node is not None:
+            attribute = self.get_attribute(path='project/dataset/created')
+            self.values.append(self.get_value(
+                attribute=attribute,
+                set_index=set_index,
+                text=created_node.text
+            ))
+        issued_node = self.root.find("./ns0:dates/ns0:date[@dateType='Issued']", self.ns_map)
+        if issued_node is not None:
+            attribute = \
+                self.get_attribute(path='project/dataset/issued') or \
+                self.get_attribute(path='project/dataset/data_publication_date')
+            self.values.append(self.get_value(
+                attribute=attribute,
+                set_index=set_index,
+                text=issued_node.text
+            ))
+        else:
+            publication_year_node = self.root.find('./ns0:publicationYear', self.ns_map)
+            if publication_year_node is not None:
                 attribute = \
                     self.get_attribute(path='project/dataset/issued') or \
                     self.get_attribute(path='project/dataset/data_publication_date')
                 self.values.append(self.get_value(
                     attribute=attribute,
                     set_index=set_index,
-                    text=issued_node.text
-                ))
-            else:
-                publication_year_node = resource.find('./ns0:publicationYear', self.ns_map)
-                if publication_year_node is not None:
-                    attribute = \
-                        self.get_attribute(path='project/dataset/issued') or \
-                        self.get_attribute(path='project/dataset/data_publication_date')
-                    self.values.append(self.get_value(
-                        attribute=attribute,
-                        set_index=set_index,
-                        text=publication_year_node.text
-                    ))
-
-            # language
-            language_node = resource.find('./ns0:language', self.ns_map)
-            if language_node is not None:
-                self.values.append(self.get_value(
-                    attribute=self.get_attribute(path='project/dataset/language'),
-                    set_index=set_index,
-                    text=resource.find('./language').text
+                    text=publication_year_node.text
                 ))
 
-            # resourceType
-            resource_type_node = resource.find('./ns0:resourceType', self.ns_map)
-            if resource_type_node is not None:
-                self.values.append(self.get_value(
-                    attribute=self.get_attribute(path='project/dataset/resource_type'),
-                    set_index=set_index,
-                    text=resource_type_node.text
-                ))
+        # language
+        language_node = self.root.find('./ns0:language', self.ns_map)
+        if language_node is not None:
+            self.values.append(self.get_value(
+                attribute=self.get_attribute(path='project/dataset/language'),
+                set_index=set_index,
+                text=self.root.find('./language').text
+            ))
 
-                # resourceTypeGeneral
-                self.values.append(self.get_value(
-                    attribute=self.get_attribute(path='project/dataset/resource_type_general'),
-                    set_index=set_index,
-                    text=resource_type_node.attrib.get('resourceTypeGeneral', 'Dataset')
-                ))
+        # resourceType
+        resource_type_node = self.root.find('./ns0:resourceType', self.ns_map)
+        if resource_type_node is not None:
+            self.values.append(self.get_value(
+                attribute=self.get_attribute(path='project/dataset/resource_type'),
+                set_index=set_index,
+                text=resource_type_node.text
+            ))
 
-            # descriptions/description
-            description_node = resource.find("./ns0:descriptions/ns0:description[@descriptionType='Abstract']", self.ns_map)
-            if description_node is not None:
-                self.values.append(self.get_value(
-                    attribute=self.get_attribute(path='project/dataset/description'),
-                    set_index=set_index,
-                    text=description_node.text
-                ))
+            # resourceTypeGeneral
+            self.values.append(self.get_value(
+                attribute=self.get_attribute(path='project/dataset/resource_type_general'),
+                set_index=set_index,
+                text=resource_type_node.attrib.get('resourceTypeGeneral', 'Dataset')
+            ))
+
+        # descriptions/description
+        description_node = self.root.find("./ns0:descriptions/ns0:description[@descriptionType='Abstract']", self.ns_map)
+        if description_node is not None:
+            self.values.append(self.get_value(
+                attribute=self.get_attribute(path='project/dataset/description'),
+                set_index=set_index,
+                text=description_node.text
+            ))
 
     def get_attribute(self, path):
         try:
