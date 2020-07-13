@@ -136,7 +136,7 @@ class DataCiteExport(Export):
                 xml.endElement('creators')
 
             # titles
-            titles = dataset.get('title')
+            titles = dataset.get('titles')
             if titles:
                 xml.startElement('titles', {})
                 for title in titles:
@@ -328,12 +328,12 @@ class DataCiteExport(Export):
                     dataset['creators'].append(creator)
 
             # titles
-            dataset['titles'] = {
+            dataset['titles'] = [{
                 'title':
                     self.get_text('project/dataset/title', index) or
                     self.get_text('project/dataset/id', index) or
                     'Dataset #{}'.format(index + 1)
-            }
+            }]
 
             # publisher
             publisher = \
