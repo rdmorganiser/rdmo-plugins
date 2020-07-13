@@ -4,11 +4,12 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from rdmo.core.xml import get_ns_map, read_xml_file
 from rdmo.domain.models import Attribute
+from rdmo.options.models import Option
 from rdmo.projects.imports import Import
 from rdmo.projects.models import Value
 
 
-class DataCiteImport(Import):
+class RadarImport(Import):
 
     def check(self):
         file_type, encoding = mimetypes.guess_type(self.file_name)
@@ -16,12 +17,12 @@ class DataCiteImport(Import):
             self.root = read_xml_file(self.file_name)
             if self.root:
                 self.ns_map = get_ns_map(self.root)
-                if self.root.tag == '{{{ns0}}}resource'.format(**self.ns_map):
+                if self.root.tag == '{{{ns0}}}radarDataset'.format(**self.ns_map):
                     return True
 
     def process(self):
         if self.current_project is None:
-            raise ValidationError(_('DataCite files can only be imported into existing projects. Please create a project first.'))
+            raise ValidationError(_('RADAR files can only be imported into existing projects. Please create a project first.'))
 
         self.catalog = self.current_project.catalog
 
@@ -38,7 +39,7 @@ class DataCiteImport(Import):
             set_index = 0
 
         # identifier
-        identifier_node = self.root.find('./ns0:identifier', self.ns_map)
+        identifier_node = self.root.find('./ns1:identifier', self.ns_map)
         if identifier_node is not None:
             self.values.append(self.get_value(
                 attribute=self.get_attribute(path='project/dataset/identifier'),
@@ -54,7 +55,7 @@ class DataCiteImport(Import):
             ))
 
         # first creator name
-        creator_node = self.root.find('./ns0:creators/ns0:creator/ns0:creatorName', self.ns_map)
+        creator_node = self.root.find('./ns0:creators/ns0:creator/ns1:creatorName', self.ns_map)
         if creator_node is not None:
             self.values.append(self.get_value(
                 attribute=self.get_attribute(path='project/dataset/creator/name'),
@@ -63,7 +64,7 @@ class DataCiteImport(Import):
             ))
 
         # title
-        title_node = self.root.find('./ns0:titles/ns0:title', self.ns_map)
+        title_node = self.root.find('./ns1:title', self.ns_map)
         if title_node is not None:
             attribute = self.get_attribute(path='project/dataset/id')
             self.values.append(self.get_value(
@@ -73,7 +74,7 @@ class DataCiteImport(Import):
             ))
 
         # publisher
-        publisher_node = self.root.find('./ns0:publisher', self.ns_map)
+        publisher_node = self.root.find('./ns1:publisher', self.ns_map)
         if publisher_node is not None:
             attribute = \
                 self.get_attribute(path='project/dataset/publisher') or \
@@ -84,51 +85,31 @@ class DataCiteImport(Import):
                 text=publisher_node.text
             ))
 
-        # subjects
-        subject_nodes = self.root.find('./ns0:subjects/ns0:subject', self.ns_map)
-        for collection_index, subject_node in enumerate(subject_nodes):
-            if subject_node is not None:
-                attribute = self.get_attribute(path='project/dataset/subject')
-                self.values.append(self.get_value(
-                    attribute=attribute,
-                    set_index=set_index,
-                    collection_index=collection_index,
-                    text=subject_node.text
-                ))
-
-        # dates
-        created_node = self.root.find("./ns0:dates/ns0:date[@dateType='Created']", self.ns_map)
-        if created_node is not None:
-            attribute = self.get_attribute(path='project/dataset/created')
+        # productionYear
+        production_year_node = self.root.find('./ns1:productionYear', self.ns_map)
+        if production_year_node is not None:
+            attribute = \
+                self.get_attribute(path='project/dataset/created')
             self.values.append(self.get_value(
                 attribute=attribute,
                 set_index=set_index,
-                text=created_node.text
+                text=production_year_node.text
             ))
-        issued_node = self.root.find("./ns0:dates/ns0:date[@dateType='Issued']", self.ns_map)
-        if issued_node is not None:
+
+        # publicationYear
+        publication_year_node = self.root.find('./ns1:publicationYear', self.ns_map)
+        if publication_year_node is not None:
             attribute = \
                 self.get_attribute(path='project/dataset/issued') or \
                 self.get_attribute(path='project/dataset/data_publication_date')
             self.values.append(self.get_value(
                 attribute=attribute,
                 set_index=set_index,
-                text=issued_node.text
+                text=publication_year_node.text
             ))
-        else:
-            publication_year_node = self.root.find('./ns0:publicationYear', self.ns_map)
-            if publication_year_node is not None:
-                attribute = \
-                    self.get_attribute(path='project/dataset/issued') or \
-                    self.get_attribute(path='project/dataset/data_publication_date')
-                self.values.append(self.get_value(
-                    attribute=attribute,
-                    set_index=set_index,
-                    text=publication_year_node.text
-                ))
 
         # language
-        language_node = self.root.find('./ns0:language', self.ns_map)
+        language_node = self.root.find('./ns1:language', self.ns_map)
         if language_node is not None:
             self.values.append(self.get_value(
                 attribute=self.get_attribute(path='project/dataset/language'),
@@ -137,23 +118,23 @@ class DataCiteImport(Import):
             ))
 
         # resourceType
-        resource_type_node = self.root.find('./ns0:resourceType', self.ns_map)
-        if resource_type_node is not None:
+        resource_node = self.root.find('./ns1:resource', self.ns_map)
+        if resource_node is not None:
             self.values.append(self.get_value(
                 attribute=self.get_attribute(path='project/dataset/resource_type'),
                 set_index=set_index,
-                text=resource_type_node.text
+                text=resource_node.text
             ))
 
             # resourceTypeGeneral
             self.values.append(self.get_value(
                 attribute=self.get_attribute(path='project/dataset/resource_type_general'),
                 set_index=set_index,
-                text=resource_type_node.attrib.get('resourceTypeGeneral', 'Dataset')
+                text=resource_node.attrib.get('resourceType', 'Dataset')
             ))
 
         # descriptions/description
-        description_node = self.root.find("./ns0:descriptions/ns0:description[@descriptionType='Abstract']", self.ns_map)
+        description_node = self.root.find("./ns1:descriptions/ns1:description[@descriptionType='Abstract']", self.ns_map)
         if description_node is not None:
             self.values.append(self.get_value(
                 attribute=self.get_attribute(path='project/dataset/description'),
