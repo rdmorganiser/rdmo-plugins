@@ -164,7 +164,7 @@ class MaDMPExport(Export):
                 if contributor:
                     dmp['contributor'].append(contributor)
 
-        contributor = self.get_person('project/preservation/responsible_person', set_index=dataset.set_index, roles=['Responsible for preservation'])
+        contributor = self.get_person('project/preservation/responsible_person', roles=['Responsible for preservation'])
         if contributor:
             dmp['contributor'].append(contributor)
 
