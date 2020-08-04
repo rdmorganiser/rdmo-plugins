@@ -27,7 +27,6 @@ class MaDMPImport(Import):
                 with open(self.file_name) as f:
                     data = json.loads(f.read())
                     self.dmp = data.get('dmp')
-                    print(self.dmp)
             except (json.decoder.JSONDecodeError, UnicodeDecodeError):
                 return False
 
@@ -137,7 +136,6 @@ class MaDMPImport(Import):
 
             # dmp/dataset/personal_data
             if dmp_dataset.get('personal_data'):
-                print(dmp_dataset.get('personal_data'))
                 attribute = self.get_attribute(path='project/dataset/sensitive_data/personal_data_yesno/yesno')
                 self.values.append(self.get_value(
                     attribute=attribute,
@@ -155,7 +153,6 @@ class MaDMPImport(Import):
 
             # dmp/dataset/sensitive_data
             if dmp_dataset.get('sensitive_data'):
-                print(dmp_dataset.get('sensitive_data'))
                 self.values.append(self.get_value(
                     attribute=self.get_attribute(path='project/dataset/sensitive_data/personal_data/bdsg_3_9'),
                     set_index=set_index,
