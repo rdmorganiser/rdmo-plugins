@@ -33,7 +33,7 @@ class MaDMPExport(Export):
     }
 
     data_access_options = {
-        'dataset_sharing_options/69 ': 'open',
+        'dataset_sharing_options/69': 'open',
         'dataset_sharing_options/68': 'shared',
         'dataset_sharing_options/67': 'shared',
         'dataset_sharing_options/70': 'closed'
