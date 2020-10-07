@@ -15,6 +15,7 @@ class Re3DataProvider(Provider):
 
     subject_attribute = 'https://rdmorganiser.github.io/terms/domain/project/research_field/title'
 
+    # create mapping of RDMO research field identifiers to DFG subject areas (Fachkollegien)
     subjects = {
         'https://rdmorganiser.github.io/terms/options/research_fields/169': '101 Ancient Cultures',
         'https://rdmorganiser.github.io/terms/options/research_fields/174': '102 History',
