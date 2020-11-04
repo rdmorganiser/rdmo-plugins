@@ -15,6 +15,7 @@ class Re3DataProvider(Provider):
 
     subject_attribute = 'https://rdmorganiser.github.io/terms/domain/project/research_field/title'
 
+    # create mapping of RDMO research field identifiers to DFG subject areas (Fachkollegien)
     subjects = {
         'https://rdmorganiser.github.io/terms/options/research_fields/169': '101 Ancient Cultures',
         'https://rdmorganiser.github.io/terms/options/research_fields/174': '102 History',
@@ -41,7 +42,7 @@ class Re3DataProvider(Provider):
         'https://rdmorganiser.github.io/terms/options/research_fields/190': '303 Physical and Theoretical Chemistry',
         'https://rdmorganiser.github.io/terms/options/research_fields/191': '304 Analytical Chemistry, Method Development (Chemistry)',
         'https://rdmorganiser.github.io/terms/options/research_fields/193': '305 Biological Chemistry and Food Chemistry',
-        'https://rdmorganiser.github.io/terms/options/research_fields/194': '306 Polymer Researc',
+        'https://rdmorganiser.github.io/terms/options/research_fields/194': '306 Polymer Research',
         'https://rdmorganiser.github.io/terms/options/research_fields/195': '307 Condensed Matter Physics',
         'https://rdmorganiser.github.io/terms/options/research_fields/196': '308 Optics, Quantum Optics and Physics of Atoms, Molecules and Plasmas',
         'https://rdmorganiser.github.io/terms/options/research_fields/198': '309 Particles, Nuclei and Fields',
