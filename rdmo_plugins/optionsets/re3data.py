@@ -68,6 +68,8 @@ class Re3DataProvider(Provider):
     }
 
     def get_options(self, project):
+        options = []
+
         # get the attribute for the subjects
         try:
             subject_attribute = Attribute.objects.get(uri=self.subject_attribute)
@@ -80,35 +82,36 @@ class Re3DataProvider(Provider):
         # get subjects from the values
         subjects = []
         for value in values:
-            subject = self.subjects.get(value.option.uri)
-            if subject:
-                subjects.append(subject)
+            if value.option is not None:
+                subject = self.subjects.get(value.option.uri)
+                if subject:
+                    subjects.append(subject)
 
-        # construct re3data url
-        url = self.re3data_url + '?' + '&'.join([
-            urlencode({'subjects[]': subject}) for subject in subjects
-        ])
+        if subjects:
+            # construct re3data url
+            url = self.re3data_url + '?' + '&'.join([
+                urlencode({'subjects[]': subject}) for subject in subjects
+            ])
 
-        # perform http request
-        logger.debug('Requesting %s', url)
-        response = requests.get(url)
-        try:
-            response.raise_for_status()
+            # perform http request
+            logger.debug('Requesting %s', url)
+            response = requests.get(url)
+            try:
+                response.raise_for_status()
 
-        except requests.exceptions.HTTPError:
-            return {}
+            except requests.exceptions.HTTPError:
+                return {}
 
-        # parse xml string and get list of repositories
-        xml = parse_xml_string(response.content.decode())
-        if xml is None:
-            return {}
+            # parse xml string and get list of repositories
+            xml = parse_xml_string(response.content.decode())
+            if xml is None:
+                return {}
 
-        # loop over repository list
-        options = []
-        for repository_node in xml.findall('repository'):
-            options.append({
-                'external_id': repository_node.find('id').text,
-                'text': repository_node.find('name').text
-            })
+            # loop over repository list
+            for repository_node in xml.findall('repository'):
+                options.append({
+                    'external_id': repository_node.find('id').text,
+                    'text': repository_node.find('name').text
+                })
 
         return options
