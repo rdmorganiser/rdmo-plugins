@@ -15,7 +15,7 @@ setup(
     maintainer_email=metadata['email'],
     license=metadata['license'],
     url='https://github.com/rdmorganiser/rdmo-plugins',
-    description=u'RDMO is a tool to support the systematic planning, organisation and implementation of the data management throughout the course of a research project.',
+    description=u'Import and export plugins for RDMO.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     classifiers=[
