@@ -9,75 +9,68 @@ from rdmo.projects.exports import Export
 
 class DataCiteExport(Export):
 
-    scheme_uri = {
-        'INSI': 'http://www.isni.org/',
-        'ORCID': 'https://orcid.org',
-        'ROR': 'https://ror.org/',
-        'GRID': 'https://www.grid.ac/'
-    }
-
     identifier_type_options = {
-        # '': 'DOI',
-        # '': 'OTHER'
+        'identifier_type/doi': 'DOI',
+        'identifier_type/other': 'OTHER'
     }
 
     language_options = {
-        # '': 'en-US',
-        # '': 'de-de'
+        'language/en': 'en-US',
+        'language/de': 'de-de'
     }
 
     name_type_options = {
-        # '': 'Personal',
-        # '': 'Organizational'
+        'name_type/personal': 'Personal',
+        'name_type/organizational': 'Organizational'
     }
 
     name_identifier_scheme_options = {
-        # '': 'ORCID',
-        # '': 'INSI',
-        # '': 'ROR',
-        # '': 'GRID'
+        'name_identifier_scheme/orcid': 'ORCID',
+        'name_identifier_scheme/insi': 'INSI',
+        'name_identifier_scheme/ror': 'ROR',
+        'name_identifier_scheme/grid': 'GRID'
     }
 
     contributor_type_options = {
-        # '': 'ContactPerson',
-        # '': 'DataCollector',
-        # '': 'DataCurator',
-        # '': 'DataManager',
-        # '': 'Distributor',
-        # '': 'Editor',
-        # '': 'HostingInstitution',
-        # '': 'Producer',
-        # '': 'ProjectLeader',
-        # '': 'ProjectManager',
-        # '': 'ProjectMember',
-        # '': '19RegistrationAgency',
-        # '': 'RegistrationAuthority',
-        # '': 'RelatedPerson',
-        # '': 'Researcher',
-        # '': 'ResearchGroup',
-        # '': 'RightsHolder',
-        # '': 'Sponsor',
-        # '': 'Supervisor',
-        # '': 'WorkPackageLeader',
-        # '': 'Other'
+        'contributor_type/contact_persion': 'ContactPerson',
+        'contributor_type/data_collector': 'DataCollector',
+        'contributor_type/data_curator': 'DataCurator',
+        'contributor_type/data_manager': 'DataManager',
+        'contributor_type/distributor': 'Distributor',
+        'contributor_type/editor': 'Editor',
+        'contributor_type/hosting_institution': 'HostingInstitution',
+        'contributor_type/producer': 'Producer',
+        'contributor_type/project_leader': 'ProjectLeader',
+        'contributor_type/project_manager': 'ProjectManager',
+        'contributor_type/project_member': 'ProjectMember',
+        'contributor_type/registration_agency': 'RegistrationAgency',
+        'contributor_type/registration_authority': 'RegistrationAuthority',
+        'contributor_type/related_person': 'RelatedPerson',
+        'contributor_type/researcher': 'Researcher',
+        'contributor_type/research_group': 'ResearchGroup',
+        'contributor_type/rights_holder': 'RightsHolder',
+        'contributor_type/sponsor': 'Sponsor',
+        'contributor_type/supervisor': 'Supervisor',
+        'contributor_type/work_package_leader': 'WorkPackageLeader',
+        'contributor_type/other': 'Other'
     }
 
     resource_type_general_options = {
-        # '': 'Audiovisual',
-        # '': 'Collection',
-        # '': 'DataPaper',
-        # '': 'Dataset',
-        # '': 'Event',
-        # '': 'Image',
-        # '': 'InteractiveResource',
-        # '': 'Model',
-        # '': 'PhysicalObject',
-        # '': 'Service',
-        # '': 'Software',
-        # '': 'Sound',
-        # '': 'Text',
-        # '': 'Workflow',
-        # '': 'Other'
+        'resource_type_general/audiovisual': 'Audiovisual',
+        'resource_type_general/collection': 'Collection',
+        'resource_type_general/data_paper': 'DataPaper',
+        'resource_type_general/dataset': 'Dataset',
+        'resource_type_general/event': 'Event',
+        'resource_type_general/image': 'Image',
+        'resource_type_general/interactive_resource': 'InteractiveResource',
+        'resource_type_general/model': 'Model',
+        'resource_type_general/physical_object': 'PhysicalObject',
+        'resource_type_general/service': 'Service',
+        'resource_type_general/software': 'Software',
+        'resource_type_general/sound': 'Sound',
+        'resource_type_general/text': 'Text',
+        'resource_type_general/workflow': 'Workflow',
+        'resource_type_general/other': 'Other'
     }
 
     rights_uri_options = {
@@ -89,6 +82,13 @@ class DataCiteExport(Export):
     }
 
     class Renderer(BaseXMLRenderer):
+
+        scheme_uri = {
+            'INSI': 'http://www.isni.org/',
+            'ORCID': 'https://orcid.org',
+            'ROR': 'https://ror.org/',
+            'GRID': 'https://www.grid.ac/'
+        }
 
         def render_document(self, xml, dataset):
             xml.startElement('resource', {
@@ -127,7 +127,7 @@ class DataCiteExport(Export):
                         }, creator.get('nameIdentifier'))
 
                     for affiliation in creator.get('affiliations', []):
-                        self.render_node('affiliation', {
+                        self.render_text_element(xml, 'affiliation', {
                             'affiliationIdentifier': affiliation.get('affiliationIdentifier'),
                             'affiliationIdentifierScheme': affiliation.get('affiliationIdentifierScheme')
                         }, affiliation.get('affiliation'))
@@ -189,7 +189,7 @@ class DataCiteExport(Export):
                         }, contributor.get('nameIdentifier'))
 
                     for affiliation in contributor.get('affiliations', []):
-                        self.render_node('affiliation', {
+                        self.render_text_element(xml, 'affiliation', {
                             'affiliationIdentifier': affiliation.get('affiliationIdentifier'),
                             'affiliationIdentifierScheme': affiliation.get('affiliationIdentifierScheme')
                         }, affiliation.get('affiliation'))
@@ -276,10 +276,12 @@ class DataCiteExport(Export):
                         'schemeURI': self.scheme_uri.get(funding_reference.get('funderIdentifierType')),
                         'funderIdentifierType': funding_reference.get('funderIdentifierType')
                     }, funding_reference.get('funderIdentifier'))
-                    self.render_text_element(xml, 'awardNumber', {
-                        'awardURI': funding_reference.get('awardURI')
-                    }, funding_reference.get('awardNumber'))
-                    self.render_text_element(xml, 'awardTitle', {}, funding_reference.get('awardTitle'))
+                    if funding_reference.get('awardNumber'):
+                        self.render_text_element(xml, 'awardNumber', {
+                            'awardURI': funding_reference.get('awardURI')
+                        }, funding_reference.get('awardNumber'))
+                    if funding_reference.get('awardTitle'):
+                        self.render_text_element(xml, 'awardTitle', {}, funding_reference.get('awardTitle'))
                     xml.endElement('fundingReference')
                 xml.endElement('fundingReferences')
 
@@ -299,93 +301,96 @@ class DataCiteExport(Export):
     def get_datasets(self):
         datasets = []
         for rdmo_dataset in self.get_set('project/dataset/id'):
-            index = rdmo_dataset.set_index
+            set_index = rdmo_dataset.set_index
             dataset = defaultdict(list)
 
             # file_name
             dataset['file_name'] = '{}.xml'.format(
-                self.get_text('project/dataset/identifier', index) or
-                self.get_text('project/dataset/id', index) or
-                str(index + 1)
+                self.get_text('project/dataset/identifier', set_index=set_index) or
+                self.get_text('project/dataset/id', set_index=set_index) or
+                str(set_index + 1)
             )
 
             # identifier
-            identifier = self.get_text('project/dataset/identifier', set_index=index)
+            identifier = self.get_text('project/dataset/identifier', set_index=set_index)
             if identifier:
                 dataset['identifier'] = identifier
                 dataset['identifierType'] = \
-                    self.get_option(self.identifier_type_options, 'project/dataset/identifier_type', set_index=index) or \
-                    self.get_option(self.identifier_type_options, 'project/dataset/pids/system', set_index=index) or \
+                    self.get_option(self.identifier_type_options, 'project/dataset/identifier_type', set_index=set_index) or \
+                    self.get_option(self.identifier_type_options, 'project/dataset/pids/system', set_index=set_index) or \
                     'OTHER'
             else:
-                dataset['identifier'] = self.get_text('project/dataset/id')
+                dataset['identifier'] = self.get_text('project/dataset/id', set_index=set_index)
                 dataset['identifierType'] = 'OTHER'
 
             # creators
-            for creator_name in self.get_values('project/dataset/creator/name', index):
-                creator = self.get_name('project/dataset/creator', index, creator_name.collection_index)
+            for creator_set in self.get_set('project/dataset/creator/name', set_prefix=str(set_index)):
+                creator = self.get_name('project/dataset/creator',
+                                        set_prefix=creator_set.set_prefix, set_index=creator_set.set_index)
                 if creator:
                     dataset['creators'].append(creator)
 
             # titles
             dataset['titles'] = [{
                 'title':
-                    self.get_text('project/dataset/title', index) or
-                    self.get_text('project/dataset/id', index) or
-                    'Dataset #{}'.format(index + 1)
+                    self.get_text('project/dataset/title', set_index=set_index) or
+                    self.get_text('project/dataset/id', set_index=set_index) or
+                    'Dataset #{}'.format(set_index + 1)
             }]
 
             # publisher
             publisher = \
-                self.get_text('project/dataset/publisher', index) or \
-                self.get_text('project/dataset/preservation/repository')
+                self.get_text('project/dataset/publisher', set_index=set_index) or \
+                self.get_text('project/dataset/preservation/repository', set_index=set_index)
             if publisher:
                 dataset['publisher'] = publisher
 
             # publication_year
-            dataset['publicationYear'] = self.get_year('project/dataset/data_publication_date', index)
+            dataset['publicationYear'] = self.get_year('project/dataset/data_publication_date', set_index=set_index)
 
             # subjects
             subjects = \
-                self.get_values('project/dataset/research/subject', index) or \
-                self.get_values('project/research_field/title')
+                self.get_values('project/dataset/subject', set_index=set_index) or \
+                self.get_values('project/research_field/title', set_index=set_index)
             if subjects:
                 dataset['subjects'] = [{
                     'subject': subject.value
                 } for subject in subjects]
 
             # contributors
-            for contributor_name in self.get_values('project/dataset/contributor/name', index):
-                contributor = self.get_name('project/dataset/contributor', index, contributor_name.collection_index)
+            for contributor_set in self.get_set('project/dataset/contributor/name', set_prefix=str(set_index)):
+                contributor = self.get_name('project/dataset/contributor',
+                                            set_prefix=contributor_set.set_prefix, set_index=contributor_set.set_index)
                 if contributor:
                     dataset['contributors'].append(contributor)
 
             # dates
             dataset['created'] =  \
-                self.get_timestamp('project/dataset/date/created', index)
+                self.get_timestamp('project/dataset/date/created', set_index=set_index)
             dataset['issued'] =  \
-                self.get_timestamp('project/dataset/date/issued', index) or \
-                self.get_timestamp('project/dataset/data_publication_date', index)
+                self.get_timestamp('project/dataset/date/issued', set_index=set_index) or \
+                self.get_timestamp('project/dataset/data_publication_date', set_index=set_index)
 
             # language
-            dataset['language'] = self.get_option(self.language_options, 'project/dataset/language', index)
+            dataset['language'] = self.get_option(self.language_options, 'project/dataset/language', set_index=set_index)
 
             # resource_type
-            resource_type = self.get_text('project/dataset/resource_type', index)
+            resource_type = self.get_text('project/dataset/resource_type', set_index=set_index)
             if resource_type:
                 dataset['resourceType'] = resource_type
                 dataset['resourceTypeGeneral'] = \
-                    self.get_option(self.resource_type_general_options, 'project/dataset/resource_type_general', index)
+                    self.get_option(self.resource_type_general_options, 'project/dataset/resource_type_general', set_index=set_index)
 
             # rights
-            for rights in self.get_values('project/dataset/sharing/conditions', index):
-                dataset['rights_list'].append({
-                    'rights': rights.value,
-                    'rightsURI': self.rights_uri_options.get(rights.option.path)
-                })
+            for rights in self.get_values('project/dataset/sharing/conditions', set_index=set_index):
+                if rights.option:
+                    dataset['rightsList'].append({
+                        'rights': rights.value,
+                        'rightsURI': self.rights_uri_options.get(rights.option.path)
+                    })
 
             # description
-            description = self.get_text('project/dataset/description', index)
+            description = self.get_text('project/dataset/description', set_index=set_index)
             if description:
                 dataset['descriptions'] = [{
                     'description': description,
@@ -393,56 +398,63 @@ class DataCiteExport(Export):
                 }]
 
             # funding_references
-            for funder in self.get_values('project/funder'):
-                dataset['funding_reference'].append({
-                    'funderName': self.get_text('project/funder/name', funder.index),
-                    'funderIdentifier': self.get_text('project/funder/identifier', funder.index),
-                    'funderIdentifierType': self.get_text('project/funder/identifier_type', funder.index),
-                    'awardURI': self.get_text('project/funder/award_uri', funder.index),
-                    'awardNumber': self.get_text('project/funder/award_number', funder.index),
-                    'awardTitle': self.get_text('project/funder/award_title', funder.index)
+            for funder in self.get_set('project/funder'):
+                dataset['fundingReferences'].append({
+                    'funderName': self.get_text('project/funder/name', set_index=funder.set_index),
+                    'funderIdentifier': self.get_text('project/funder/name_identifier', set_index=funder.set_index),
+                    'funderIdentifierType': self.get_option(self.name_identifier_scheme_options, 'project/funder/name_identifier_scheme', set_index=funder.set_index),
+                    'awardURI': self.get_text('project/funder/programme/url', set_index=funder.set_index),
+                    'awardNumber': self.get_text('project/funder/programme/number', set_index=funder.set_index),
+                    'awardTitle': self.get_text('project/funder/programme/title', set_index=funder.set_index)
                 })
 
             datasets.append(dataset)
 
         return datasets
 
-    def get_name(self, attribute, set_index=0, collection_index=0):
-        name_text = self.get_text(attribute + '/name', set_index=set_index, collection_index=collection_index)
+    def get_name(self, attribute, set_prefix='', set_index=0):
+        name_text = self.get_text(attribute + '/name', set_prefix=set_prefix, set_index=set_index)
         if name_text:
             name = {
                 'name': name_text,
                 'nameType': self.get_option(self.name_type_options, attribute + '/name_type',
-                                            set_index=set_index, collection_index=collection_index, default='Personal'),
+                                            set_prefix=set_prefix, set_index=set_index, default='Personal'),
             }
 
             # contributor_name
             contributor_type = self.get_option(self.contributor_type_options, attribute + '/contributor_type',
-                                               set_index=set_index, collection_index=collection_index, default='Other')
+                                               set_prefix=set_prefix, set_index=set_index, default='Other')
             if contributor_type:
                 name['contributorType'] = contributor_type
 
             # given_name
-            given_name = self.get_text(attribute + '/given_name',
-                                       set_index=set_index, collection_index=collection_index)
+            given_name = self.get_text(attribute + '/given_name', set_prefix=set_prefix, set_index=set_index)
             if given_name:
                 name['givenName'] = given_name
 
             # family_name
-            family_name = self.get_text(attribute + '/family_name',
-                                        set_index=set_index, collection_index=collection_index)
+            family_name = self.get_text(attribute + '/family_name', set_prefix=set_prefix, set_index=set_index)
             if family_name:
                 name['familyName'] = family_name
 
             # identifier
-            identifier = self.get_text(attribute + '/identifier',
-                                       set_index=set_index, collection_index=collection_index)
+            identifier = self.get_text(attribute + '/name_identifier', set_prefix=set_prefix, set_index=set_index)
             if identifier:
                 name['nameIdentifier'] = identifier
                 name['nameIdentifierScheme'] = self.get_option(self.name_identifier_scheme_options,
-                                                               attribute + '/identifier_type',
-                                                               set_index=set_index, collection_index=collection_index,
+                                                               attribute + '/name_identifier_scheme',
+                                                               set_prefix=set_prefix, set_index=set_index,
                                                                default='ORCID')
+
+            # affiliations
+            affiliations = self.get_list(attribute + '/affiliation', set_prefix=set_prefix, set_index=set_index)
+            if affiliations:
+                name['affiliations'] = []
+                for affiliation in affiliations:
+                    name['affiliations'].append({
+                        'affiliation': affiliation
+                    })
+
             return name
         else:
             return None
