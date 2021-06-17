@@ -81,6 +81,43 @@ class DataCiteExport(Export):
         'dataset_license_types/cc0': 'https://creativecommons.org/publicdomain/zero/1.0/deed.de'
     }
 
+    relation_type_options = {
+        'relation_type/is_cited_by': 'IsCitedBy',
+        'relation_type/cites': 'Cites',
+        'relation_type/is_supplement_to': 'IsSupplementTo',
+        'relation_type/is_supplemented_by': 'IsSupplementedBy',
+        'relation_type/is_continued_by': 'IsContinuedBy',
+        'relation_type/continues': 'Continues',
+        'relation_type/describes': 'Describes',
+        'relation_type/is_described_by': 'IsDescribedBy',
+        'relation_type/has_metadata': 'HasMetadata',
+        'relation_type/is_metadata_for': 'IsMetadataFor',
+        'relation_type/has_version': 'HasVersion',
+        'relation_type/is_version_of': 'IsVersionOf',
+        'relation_type/is_new_version_of': 'IsNewVersionOf',
+        'relation_type/is_previous_version_of': 'IsPreviousVersionOf',
+        'relation_type/is_part_of': 'IsPartOf',
+        'relation_type/has_part': 'HasPart',
+        'relation_type/is_published_in': 'IsPublishedIn',
+        'relation_type/is_referenced_by': 'IsReferencedBy',
+        'relation_type/references': 'References',
+        'relation_type/is_documented_by': 'IsDocumentedBy',
+        'relation_type/documents': 'Documents',
+        'relation_type/is_compiled_by': 'IsCompiledBy',
+        'relation_type/Compiles': 'Compiles',
+        'relation_type/is_variant_form_of': 'IsVariantFormOf',
+        'relation_type/is_original_form_of': 'IsOriginalFormOf',
+        'relation_type/is_identical_to': 'IsIdenticalTo',
+        'relation_type/is_reviewed_by': 'IsReviewedBy',
+        'relation_type/reviews': 'Reviews',
+        'relation_type/is_derived_from': 'IsDerivedFrom',
+        'relation_type/is_source_of': 'IsSourceOf',
+        'relation_type/is_required_by': 'IsRequiredBy',
+        'relation_type/requires': 'Requires',
+        'relation_type/obsoletes': 'Obsoletes',
+        'relation_type/is_obsoleted_by': 'IsObsoletedBy'
+    }
+
     class Renderer(BaseXMLRenderer):
 
         scheme_uri = {
@@ -171,7 +208,9 @@ class DataCiteExport(Export):
             if contributors:
                 xml.startElement('contributors', {})
                 for contributor in dataset.get('contributors', []):
-                    xml.startElement('contributor', {})
+                    xml.startElement('contributor', {
+                        'contributorType': contributor.get('contributorType')
+                    })
                     self.render_text_element(xml, 'contributorName', {
                         'nameType': contributor.get('nameType')
                     }, contributor.get('name'))
@@ -230,7 +269,7 @@ class DataCiteExport(Export):
                 xml.startElement('alternateIdentifiers', {})
                 for alternate_identifier in alternate_identifiers:
                     self.render_text_element(xml, 'alternateIdentifier', {
-                        'alternateIdentifierType': dataset.get('alternateIdentifierType')
+                        'alternateIdentifierType': alternate_identifier.get('alternateIdentifierType')
                     }, alternate_identifier.get('alternateIdentifier'))
                 xml.endElement('alternateIdentifiers')
 
@@ -381,6 +420,34 @@ class DataCiteExport(Export):
                 dataset['resourceTypeGeneral'] = \
                     self.get_option(self.resource_type_general_options, 'project/dataset/resource_type_general', set_index=set_index)
 
+            # alternate_identifiers
+            for alternate_identifier_set in self.get_set('project/dataset/alternate_identifier/identifier', set_prefix=str(set_index)):
+                dataset['alternateIdentifiers'].append({
+                    'alternateIdentifier': self.get_text('project/dataset/alternate_identifier/identifier',
+                                                         set_prefix=alternate_identifier_set.set_prefix,
+                                                         set_index=alternate_identifier_set.set_index),
+                    'alternateIdentifierType': self.get_option(self.identifier_type_options,
+                                                               'project/dataset/alternate_identifier/identifier_type',
+                                                               set_prefix=alternate_identifier_set.set_prefix,
+                                                               set_index=alternate_identifier_set.set_index)
+                })
+
+            # related_identifiers
+            for related_identifier_set in self.get_set('project/dataset/related_identifier/identifier', set_prefix=str(set_index)):
+                dataset['relatedIdentifiers'].append({
+                    'relatedIdentifier': self.get_text('project/dataset/related_identifier/identifier',
+                                                       set_prefix=related_identifier_set.set_prefix,
+                                                       set_index=related_identifier_set.set_index),
+                    'relatedIdentifierType': self.get_option(self.identifier_type_options,
+                                                             'project/dataset/related_identifier/identifier_type',
+                                                             set_prefix=related_identifier_set.set_prefix,
+                                                             set_index=related_identifier_set.set_index),
+                    'relationType': self.get_option(self.relation_type_options,
+                                                    'project/dataset/related_identifier/relation_type',
+                                                    set_prefix=related_identifier_set.set_prefix,
+                                                    set_index=related_identifier_set.set_index)
+                })
+
             # rights
             for rights in self.get_values('project/dataset/sharing/conditions', set_index=set_index):
                 if rights.option:
@@ -398,7 +465,7 @@ class DataCiteExport(Export):
                 }]
 
             # funding_references
-            for funder in self.get_set('project/funder'):
+            for funder in self.get_set('project/funder/id'):
                 dataset['fundingReferences'].append({
                     'funderName': self.get_text('project/funder/name', set_index=funder.set_index),
                     'funderIdentifier': self.get_text('project/funder/name_identifier', set_index=funder.set_index),
