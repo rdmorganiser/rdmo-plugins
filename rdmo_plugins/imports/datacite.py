@@ -12,6 +12,7 @@ class DataCiteImport(Import):
 
     identifier_type_options = {
         'https://rdmo.jochenklar.dev/terms/options/identifier_type/doi': 'DOI',
+        'https://rdmo.jochenklar.dev/terms/options/identifier_type/url': 'URL',
         'https://rdmo.jochenklar.dev/terms/options/identifier_type/other': 'OTHER'
     }
 
@@ -114,7 +115,7 @@ class DataCiteImport(Import):
         'https://rdmorganiser.github.io/terms/options/dataset_license_types/73': 'https://creativecommons.org/licenses/by-nc/4.0/',
         'https://rdmorganiser.github.io/terms/options/dataset_license_types/74': 'https://creativecommons.org/licenses/by-nd/4.0/',
         'https://rdmorganiser.github.io/terms/options/dataset_license_types/75': 'https://creativecommons.org/licenses/by-sa/4.0/',
-        'https://rdmorganiser.github.io/terms/options/dataset_license_types/cc0': 'https://creativecommons.org/publicdomain/zero/1.0/deed.de'
+        'https://rdmorganiser.github.io/terms/options/dataset_license_types/cc0': 'https://creativecommons.org/publicdomain/zero/1.0/'
     }
 
     relation_type_options = {
@@ -155,7 +156,10 @@ class DataCiteImport(Import):
     }
 
     def get_key(self, dict, value):
-        return list(dict.keys())[list(dict.values()).index(value)]
+        try:
+            return list(dict.keys())[list(dict.values()).index(value)]
+        except ValueError:
+            return None
 
     def check(self):
         file_type, encoding = mimetypes.guess_type(self.file_name)
