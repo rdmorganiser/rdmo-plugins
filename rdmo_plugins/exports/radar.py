@@ -1,13 +1,24 @@
+import logging
+import time
 import zipfile
+
 from collections import defaultdict
 
+from django import forms
+from django.conf import settings
 from django.http import HttpResponse
+from django.shortcuts import redirect, reverse, render
+from django.utils.translation import gettext_lazy as _
+
 from rdmo.core.exports import prettify_xml
 from rdmo.core.renderers import BaseXMLRenderer
 from rdmo.projects.exports import Export
+from rdmo.services.providers import OauthProviderMixin
+
+logger = logging.getLogger(__name__)
 
 
-class RadarExport(Export):
+class RadarMixin(object):
 
     identifier_type_options = {
         'identifier_type/doi': 'DOI',
@@ -174,6 +185,250 @@ class RadarExport(Export):
         'relation_type/obsoletes': 'Obsoletes',
         'relation_type/is_obsoleted_by': 'IsObsoletedBy'
     }
+
+    def get_datasets(self):
+        datasets = []
+        for rdmo_dataset in self.get_set('project/dataset/id'):
+            set_index = rdmo_dataset.set_index
+            dataset = self.get_dataset(set_index)
+            datasets.append(dataset)
+
+        return datasets
+
+    def get_dataset(self, set_index):
+        dataset = defaultdict(list)
+
+        # file_name
+        dataset['file_name'] = '{}.xml'.format(
+            self.get_text('project/dataset/identifier', set_index=set_index) or
+            self.get_text('project/dataset/id', set_index=set_index) or
+            str(set_index + 1)
+        )
+
+        # identifier
+        identifier = self.get_text('project/dataset/identifier', set_index=set_index)
+        if identifier:
+            dataset['identifier'] = identifier
+            dataset['identifierType'] = \
+                self.get_option(self.identifier_type_options, 'project/dataset/identifier_type', set_index=set_index) or \
+                self.get_option(self.identifier_type_options, 'project/dataset/pids/system', set_index=set_index) or \
+                'OTHER'
+        else:
+            dataset['identifier'] = self.get_text('project/dataset/id', set_index=set_index)
+            dataset['identifierType'] = 'OTHER'
+
+        # creators
+        for creator_set in self.get_set('project/dataset/creator/name', set_prefix=str(set_index)):
+            creator = self.get_name('project/dataset/creator',
+                                    set_prefix=creator_set.set_prefix, set_index=creator_set.set_index)
+            if creator:
+                dataset['creators'].append(creator)
+
+        # title
+        dataset['title'] =  \
+            self.get_text('project/dataset/title', set_index=set_index) or \
+            self.get_text('project/dataset/id', set_index=set_index) or \
+            'Dataset #{}'.format(set_index + 1)
+
+        # publisher
+        publisher = \
+            self.get_text('project/dataset/publisher', set_index=set_index) or \
+            self.get_text('project/dataset/preservation/repository', set_index=set_index)
+        if publisher:
+            dataset['publisher'] = publisher
+
+        # productionYear
+        dataset['productionYear'] = \
+            self.get_year('project/dataset/created', set_index=set_index) or \
+            self.get_year('project/dataset/data_publication_date', set_index=set_index)
+
+        # publicationYear
+        dataset['publicationYear'] = \
+            self.get_year('project/dataset/issued', set_index=set_index) or \
+            self.get_year('project/dataset/data_publication_date', set_index=set_index)
+
+        # subjectArea
+        subject_areas = \
+            self.get_values('project/dataset/subject', set_index=set_index) or \
+            self.get_values('project/research_field/title', set_index=set_index)
+
+        if subject_areas:
+            dataset['subjectAreas'] = []
+            for subject_area in subject_areas:
+                if subject_area.is_true:
+                    if subject_area.option:
+                        controlled_subject_area_name = self.controlled_subject_area_options.get(subject_area.option.path, 'Other')
+                    else:
+                        controlled_subject_area_name = 'Other'
+
+                    if controlled_subject_area_name == 'Other':
+                        dataset['subjectAreas'].append({
+                            'controlledSubjectAreaName': controlled_subject_area_name,
+                            'additionalSubjectAreaName': subject_area.value
+                        })
+                    else:
+                        dataset['subjectAreas'].append({
+                            'controlledSubjectAreaName': controlled_subject_area_name
+                        })
+
+        # resource
+        resource_type = self.get_text('project/dataset/resource_type', set_index=set_index)
+        if resource_type:
+            dataset['resourceType'] = resource_type
+            dataset['resourceTypeGeneral'] = \
+                self.get_option(self.resource_type_options, 'project/dataset/resource_type_general', set_index=set_index)
+
+        dataset['title'] = \
+            self.get_text('project/dataset/title', set_index=set_index) or \
+            self.get_text('project/dataset/id', set_index=set_index) or \
+            'Dataset #{}'.format(set_index + 1)
+
+        # alternate_identifiers
+        for alternate_identifier_set in self.get_set('project/dataset/alternate_identifier/identifier', set_prefix=str(set_index)):
+            dataset['alternateIdentifiers'].append({
+                'alternateIdentifier': self.get_text('project/dataset/alternate_identifier/identifier',
+                                                     set_prefix=alternate_identifier_set.set_prefix,
+                                                     set_index=alternate_identifier_set.set_index),
+                'alternateIdentifierType': self.get_option(self.identifier_type_options,
+                                                           'project/dataset/alternate_identifier/identifier_type',
+                                                           set_prefix=alternate_identifier_set.set_prefix,
+                                                           set_index=alternate_identifier_set.set_index)
+            })
+
+        # related_identifiers
+        for related_identifier_set in self.get_set('project/dataset/related_identifier/identifier', set_prefix=str(set_index)):
+            dataset['relatedIdentifiers'].append({
+                'relatedIdentifier': self.get_text('project/dataset/related_identifier/identifier',
+                                                   set_prefix=related_identifier_set.set_prefix,
+                                                   set_index=related_identifier_set.set_index),
+                'relatedIdentifierType': self.get_option(self.identifier_type_options,
+                                                         'project/dataset/related_identifier/identifier_type',
+                                                         set_prefix=related_identifier_set.set_prefix,
+                                                         set_index=related_identifier_set.set_index),
+                'relationType': self.get_option(self.relation_type_options,
+                                                'project/dataset/related_identifier/relation_type',
+                                                set_prefix=related_identifier_set.set_prefix,
+                                                set_index=related_identifier_set.set_index)
+            })
+
+        # rights
+        rights_list = self.get_values('project/dataset/sharing/conditions', set_index=set_index)
+        if rights_list:
+            dataset['rights'] = []
+            for rights in rights_list:
+                if rights.option:
+                    controlled_rights = self.controlled_rights_options.get(rights.option.path, 'Other')
+                else:
+                    controlled_rights = 'Other'
+
+                dataset['rights'].append({
+                    'controlledRights': controlled_rights,
+                    'additionalRights': rights.value if controlled_rights == 'Other' else None
+                })
+
+        # rights holders
+        rights_holders = self.get_list('project/dataset/sharing/rights_holder', set_index=set_index)
+        if rights_holders:
+            dataset['rightsHolders'] = rights_holders
+
+        # description
+        description = self.get_text('project/dataset/description', set_index=set_index)
+        if description:
+            dataset['descriptions'] = [{
+                'description': description,
+                'descriptionType': 'Abstract'
+            }]
+
+        # keywords
+        keywords = self.get_list('project/research_question/keywords')
+        if keywords:
+            dataset['keywords'] = keywords
+
+        # contributors
+        for contributor_set in self.get_set('project/dataset/contributor/name', set_prefix=str(set_index)):
+            contributor = self.get_name('project/dataset/contributor',
+                                        set_prefix=contributor_set.set_prefix, set_index=contributor_set.set_index)
+            if contributor:
+                dataset['contributors'].append(contributor)
+
+        # language
+        dataset['language'] = self.get_option(self.language_options, 'project/dataset/language', set_index=set_index)
+
+        # dataSource
+        data_source = self.get_text('project/dataset/data_source', set_index=set_index)
+        if data_source:
+            dataset['dataSources'] = [{
+                'dataSource': data_source,
+                'dataSourceDetail': self.get_option(self.data_source_options, 'project/dataset/data_source_detail', set_index=set_index)
+            }]
+
+        # dataProcessing
+        data_processing = self.get_list('project/dataset/data_processing', set_index=set_index)
+        if data_processing:
+            dataset['dataProcessing'] = data_processing
+
+        # funding_references
+        for funder in self.get_set('project/funder/id'):
+            dataset['fundingReferences'].append({
+                'funderName': self.get_text('project/funder/name', set_index=funder.set_index),
+                'funderIdentifier': self.get_text('project/funder/name_identifier', set_index=funder.set_index),
+                'funderIdentifierType': self.get_option(self.name_identifier_scheme_options, 'project/funder/name_identifier_scheme', set_index=funder.set_index),
+                'awardURI': self.get_text('project/funder/programme/url', set_index=funder.set_index),
+                'awardNumber': self.get_text('project/funder/programme/number', set_index=funder.set_index),
+                'awardTitle': self.get_text('project/funder/programme/title', set_index=funder.set_index)
+            })
+
+        return dataset
+
+    def get_name(self, attribute, set_prefix='', set_index=0):
+        name_text = self.get_text(attribute + '/name', set_prefix=set_prefix, set_index=set_index)
+        if name_text:
+            name = {
+                'name': name_text,
+                'nameType': self.get_option(self.name_type_options, attribute + '/name_type',
+                                            set_prefix=set_prefix, set_index=set_index, default='Personal'),
+            }
+
+            # contributor_name
+            contributor_type = self.get_option(self.contributor_type_options, attribute + '/contributor_type',
+                                               set_prefix=set_prefix, set_index=set_index, default='Other')
+            if contributor_type:
+                name['contributorType'] = contributor_type
+
+            # given_name
+            given_name = self.get_text(attribute + '/given_name', set_prefix=set_prefix, set_index=set_index)
+            if given_name:
+                name['givenName'] = given_name
+
+            # family_name
+            family_name = self.get_text(attribute + '/family_name', set_prefix=set_prefix, set_index=set_index)
+            if family_name:
+                name['familyName'] = family_name
+
+            # identifier
+            identifier = self.get_text(attribute + '/name_identifier', set_prefix=set_prefix, set_index=set_index)
+            if identifier:
+                name['nameIdentifier'] = identifier
+                name['nameIdentifierScheme'] = self.get_option(self.name_identifier_scheme_options,
+                                                               attribute + '/name_identifier_scheme',
+                                                               set_prefix=set_prefix, set_index=set_index,
+                                                               default='ORCID')
+
+            # affiliations
+            affiliations = self.get_list(attribute + '/affiliation', set_prefix=set_prefix, set_index=set_index)
+            if affiliations:
+                name['affiliations'] = []
+                for affiliation in affiliations:
+                    name['affiliations'].append({
+                        'affiliation': affiliation
+                    })
+
+            return name
+        else:
+            return None
+
+
+class RadarExport(RadarMixin, Export):
 
     class Renderer(BaseXMLRenderer):
 
@@ -449,7 +704,7 @@ class RadarExport(Export):
 
             xml.endElement('ns2:radarDataset')
 
-    def render(self):
+    def render(self, request):
         response = HttpResponse(content_type='application/zip')
         response['Content-Disposition'] = 'filename="%s.zip"' % self.project.title
 
@@ -460,236 +715,135 @@ class RadarExport(Export):
 
         return response
 
-    def get_datasets(self):
-        datasets = []
-        for rdmo_dataset in self.get_set('project/dataset/id'):
-            set_index = rdmo_dataset.set_index
-            dataset = defaultdict(list)
 
-            # file_name
-            dataset['file_name'] = '{}.xml'.format(
-                self.get_text('project/dataset/identifier', set_index=set_index) or
-                self.get_text('project/dataset/id', set_index=set_index) or
-                str(set_index + 1)
-            )
+class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
 
-            # identifier
-            identifier = self.get_text('project/dataset/identifier', set_index=set_index)
-            if identifier:
-                dataset['identifier'] = identifier
-                dataset['identifierType'] = \
-                    self.get_option(self.identifier_type_options, 'project/dataset/identifier_type', set_index=set_index) or \
-                    self.get_option(self.identifier_type_options, 'project/dataset/pids/system', set_index=set_index) or \
-                    'OTHER'
-            else:
-                dataset['identifier'] = self.get_text('project/dataset/id', set_index=set_index)
-                dataset['identifierType'] = 'OTHER'
+    class Form(forms.Form):
 
-            # creators
-            for creator_set in self.get_set('project/dataset/creator/name', set_prefix=str(set_index)):
-                creator = self.get_name('project/dataset/creator',
-                                        set_prefix=creator_set.set_prefix, set_index=creator_set.set_index)
-                if creator:
-                    dataset['creators'].append(creator)
+        dataset = forms.CharField(label=_('Select dataset of your project'))
+        workspace = forms.CharField(label=_('Select a workspace in RADAR'))
 
-            # title
-            dataset['title'] =  \
-                self.get_text('project/dataset/title', set_index=set_index) or \
-                self.get_text('project/dataset/id', set_index=set_index) or \
-                'Dataset #{}'.format(set_index + 1)
+        def __init__(self, *args, **kwargs):
+            dataset_choices = kwargs.pop('dataset_choices')
+            workspace_choices = kwargs.pop('workspace_choices')
+            super().__init__(*args, **kwargs)
 
-            # publisher
-            publisher = \
-                self.get_text('project/dataset/publisher', set_index=set_index) or \
-                self.get_text('project/dataset/preservation/repository', set_index=set_index)
-            if publisher:
-                dataset['publisher'] = publisher
+            self.fields['dataset'].widget = forms.RadioSelect(choices=dataset_choices)
+            self.fields['workspace'].widget = forms.RadioSelect(choices=workspace_choices)
 
-            # productionYear
-            dataset['productionYear'] = \
-                self.get_year('project/dataset/created', set_index=set_index) or \
-                self.get_year('project/dataset/data_publication_date', set_index=set_index)
+    def render(self, request):
+        url = self.get_get_url()
+        return self.get(request, url)
 
-            # publicationYear
-            dataset['publicationYear'] = \
-                self.get_year('project/dataset/issued', set_index=set_index) or \
-                self.get_year('project/dataset/data_publication_date', set_index=set_index)
+    def submit(self, request):
+        dataset_choices, workspace_choices = self.get_from_session(request, 'form')
+        form = self.Form(
+            request.POST,
+            dataset_choices=dataset_choices,
+            workspace_choices=workspace_choices
+        )
 
-            # subjectArea
-            subject_areas = \
-                self.get_values('project/dataset/subject', set_index=set_index) or \
-                self.get_values('project/research_field/title', set_index=set_index)
-
-            if subject_areas:
-                dataset['subjectAreas'] = []
-                for subject_area in subject_areas:
-                    if subject_area.is_true:
-                        if subject_area.option:
-                            controlled_subject_area_name = self.controlled_subject_area_options.get(subject_area.option.path, 'Other')
-                        else:
-                            controlled_subject_area_name = 'Other'
-
-                        if controlled_subject_area_name == 'Other':
-                            dataset['subjectAreas'].append({
-                                'controlledSubjectAreaName': controlled_subject_area_name,
-                                'additionalSubjectAreaName': subject_area.value
-                            })
-                        else:
-                            dataset['subjectAreas'].append({
-                                'controlledSubjectAreaName': controlled_subject_area_name
-                            })
-
-            # resource
-            resource_type = self.get_text('project/dataset/resource_type', set_index=set_index)
-            if resource_type:
-                dataset['resourceType'] = resource_type
-                dataset['resourceTypeGeneral'] = \
-                    self.get_option(self.resource_type_options, 'project/dataset/resource_type_general', set_index=set_index)
-
-
-
-            # alternate_identifiers
-            for alternate_identifier_set in self.get_set('project/dataset/alternate_identifier/identifier', set_prefix=str(set_index)):
-                dataset['alternateIdentifiers'].append({
-                    'alternateIdentifier': self.get_text('project/dataset/alternate_identifier/identifier',
-                                                         set_prefix=alternate_identifier_set.set_prefix,
-                                                         set_index=alternate_identifier_set.set_index),
-                    'alternateIdentifierType': self.get_option(self.identifier_type_options,
-                                                               'project/dataset/alternate_identifier/identifier_type',
-                                                               set_prefix=alternate_identifier_set.set_prefix,
-                                                               set_index=alternate_identifier_set.set_index)
-                })
-
-            # related_identifiers
-            for related_identifier_set in self.get_set('project/dataset/related_identifier/identifier', set_prefix=str(set_index)):
-                dataset['relatedIdentifiers'].append({
-                    'relatedIdentifier': self.get_text('project/dataset/related_identifier/identifier',
-                                                       set_prefix=related_identifier_set.set_prefix,
-                                                       set_index=related_identifier_set.set_index),
-                    'relatedIdentifierType': self.get_option(self.identifier_type_options,
-                                                             'project/dataset/related_identifier/identifier_type',
-                                                             set_prefix=related_identifier_set.set_prefix,
-                                                             set_index=related_identifier_set.set_index),
-                    'relationType': self.get_option(self.relation_type_options,
-                                                    'project/dataset/related_identifier/relation_type',
-                                                    set_prefix=related_identifier_set.set_prefix,
-                                                    set_index=related_identifier_set.set_index)
-                })
-
-            # rights
-            rights_list = self.get_values('project/dataset/sharing/conditions', set_index=set_index)
-            if rights_list:
-                dataset['rights'] = []
-                for rights in rights_list:
-                    if rights.option:
-                        controlled_rights = self.controlled_rights_options.get(rights.option.path, 'Other')
-                    else:
-                        controlled_rights = 'Other'
-
-                    dataset['rights'].append({
-                        'controlledRights': controlled_rights,
-                        'additionalRights': rights.value if controlled_rights == 'Other' else None
-                    })
-
-            # rights holders
-            rights_holders = self.get_list('project/dataset/sharing/rights_holder', set_index=set_index)
-            if rights_holders:
-                dataset['rightsHolders'] = rights_holders
-
-            # description
-            description = self.get_text('project/dataset/description', set_index=set_index)
-            if description:
-                dataset['descriptions'] = [{
-                    'description': description,
-                    'descriptionType': 'Abstract'
-                }]
-
-            # keywords
-            keywords = self.get_list('project/research_question/keywords')
-            if keywords:
-                dataset['keywords'] = keywords
-
-            # contributors
-            for contributor_set in self.get_set('project/dataset/contributor/name', set_prefix=str(set_index)):
-                contributor = self.get_name('project/dataset/contributor',
-                                            set_prefix=contributor_set.set_prefix, set_index=contributor_set.set_index)
-                if contributor:
-                    dataset['contributors'].append(contributor)
-
-            # language
-            dataset['language'] = self.get_option(self.language_options, 'project/dataset/language', set_index=set_index)
-
-            # dataSource
-            data_source = self.get_text('project/dataset/data_source', set_index=set_index)
-            if data_source:
-                dataset['dataSources'] = [{
-                    'dataSource': data_source,
-                    'dataSourceDetail': self.get_option(self.data_source_options, 'project/dataset/data_source_detail', set_index=set_index)
-                }]
-
-            # dataProcessing
-            data_processing = self.get_list('project/dataset/data_processing', set_index=set_index)
-            if data_processing:
-                dataset['dataProcessing'] = data_processing
-
-            # funding_references
-            for funder in self.get_set('project/funder/id'):
-                dataset['fundingReferences'].append({
-                    'funderName': self.get_text('project/funder/name', set_index=funder.set_index),
-                    'funderIdentifier': self.get_text('project/funder/name_identifier', set_index=funder.set_index),
-                    'funderIdentifierType': self.get_option(self.name_identifier_scheme_options, 'project/funder/name_identifier_scheme', set_index=funder.set_index),
-                    'awardURI': self.get_text('project/funder/programme/url', set_index=funder.set_index),
-                    'awardNumber': self.get_text('project/funder/programme/number', set_index=funder.set_index),
-                    'awardTitle': self.get_text('project/funder/programme/title', set_index=funder.set_index)
-                })
-
-            datasets.append(dataset)
-
-        return datasets
-
-    def get_name(self, attribute, set_prefix='', set_index=0):
-        name_text = self.get_text(attribute + '/name', set_prefix=set_prefix, set_index=set_index)
-        if name_text:
-            name = {
-                'name': name_text,
-                'nameType': self.get_option(self.name_type_options, attribute + '/name_type',
-                                            set_prefix=set_prefix, set_index=set_index, default='Personal'),
-            }
-
-            # contributor_name
-            contributor_type = self.get_option(self.contributor_type_options, attribute + '/contributor_type',
-                                               set_prefix=set_prefix, set_index=set_index, default='Other')
-            if contributor_type:
-                name['contributorType'] = contributor_type
-
-            # given_name
-            given_name = self.get_text(attribute + '/given_name', set_prefix=set_prefix, set_index=set_index)
-            if given_name:
-                name['givenName'] = given_name
-
-            # family_name
-            family_name = self.get_text(attribute + '/family_name', set_prefix=set_prefix, set_index=set_index)
-            if family_name:
-                name['familyName'] = family_name
-
-            # identifier
-            identifier = self.get_text(attribute + '/name_identifier', set_prefix=set_prefix, set_index=set_index)
-            if identifier:
-                name['nameIdentifier'] = identifier
-                name['nameIdentifierScheme'] = self.get_option(self.name_identifier_scheme_options,
-                                                               attribute + '/name_identifier_scheme',
-                                                               set_prefix=set_prefix, set_index=set_index,
-                                                               default='ORCID')
-
-            # affiliations
-            affiliations = self.get_list(attribute + '/affiliation', set_prefix=set_prefix, set_index=set_index)
-            if affiliations:
-                name['affiliations'] = []
-                for affiliation in affiliations:
-                    name['affiliations'].append({
-                        'affiliation': affiliation
-                    })
-
-            return name
+        if form.is_valid():
+            url = self.get_post_url(form.cleaned_data['workspace'])
+            data = self.get_post_data(form.cleaned_data['dataset'])
+            return self.post(request, url, data)
         else:
-            return None
+            return render(request, 'plugins/radar.html', {'form': form}, status=200)
+
+    def get_success(self, request, response):
+        datasets = self.get_set('project/dataset/id')
+        dataset_choices = [(dataset.set_index, dataset.value)for dataset in datasets]
+        workspace_choices = [
+            (workspace.get('id'), workspace.get('descriptiveMetadata', {}).get('title'))
+            for workspace in response.json().get('data', [])
+        ]
+
+        self.store_in_session(request, 'form', (dataset_choices, workspace_choices))
+
+        form = self.Form(
+            dataset_choices=dataset_choices,
+            workspace_choices=workspace_choices
+        )
+
+        return render(request, 'plugins/exports_radar.html', {'form': form}, status=200)
+
+    def post_success(self, request, response):
+        radar_id = response.json().get('id')
+        if radar_id:
+            return redirect('{}/radar/de/dataset/{}'.format(self.radar_url, radar_id))
+        else:
+            return render(request, 'core/error.html', {
+                'title': _('RADAR error'),
+                'errors': [_('The ID of the new dataset could not be retrieved.')]
+            }, status=200)
+
+    @property
+    def radar_url(self):
+        return settings.RADAR_PROVIDER['radar_url'].strip('/')
+
+    @property
+    def authorize_url(self):
+        return '{}/radar-backend/oauth/authorize'.format(self.radar_url)
+
+    @property
+    def token_url(self):
+        return '{}/radar-backend/oauth/token'.format(self.radar_url)
+
+    @property
+    def client_id(self):
+        return settings.RADAR_PROVIDER['client_id']
+
+    @property
+    def client_secret(self):
+        return settings.RADAR_PROVIDER['client_secret']
+
+    @property
+    def redirect_path(self):
+        return reverse('oauth_callback', args=['radar'])
+
+    def get_get_url(self):
+        return '{}/radar/api/workspaces'.format(self.radar_url)
+
+    def get_post_url(self, workspace_id):
+        return '{}/radar/api/workspaces/{}/datasets'.format(self.radar_url, workspace_id)
+
+    def get_post_data(self, set_index):
+        dataset = self.get_dataset(set_index)
+        now = int(time.time())
+
+        return {
+            'technicalMetadata': {
+                "retentionPeriod": 10,
+                "archiveDate": now,
+                "publishDate": now,
+                "responsibleEmail": self.user.email,
+                "schema": {
+                    "key": "RDDM",
+                    "version": "09"
+                }
+            },
+            'descriptiveMetadata': dataset
+        }
+
+    def get_authorize_params(self, request, state):
+        return {
+            'response_type': 'code',
+            'client_id': 'jochenklar',
+            'redirect_uri': 'https://rdmo.jochenklar.dev/services/oauth/radar/callback/',
+            # 'redirect_uri': request.build_absolute_uri(self.redirect_path),
+            'state': state
+        }
+
+    def get_callback_params(self, request):
+        return {
+            'grant_type': 'authorization_code',
+            # 'redirect_uri': request.build_absolute_uri(self.redirect_path),
+            'redirect_uri': 'https://rdmo.jochenklar.dev/services/oauth/radar/callback/',
+            'code': request.GET.get('code')
+        }
+
+    def get_callback_auth(self, request):
+        return (self.client_id, self.client_secret)
+
+    def get_error_message(self, response):
+        return response.json().get('exception')
