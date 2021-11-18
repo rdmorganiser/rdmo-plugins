@@ -27,17 +27,17 @@ class ZenodoExportProvider(OauthProviderMixin, Export):
 
             self.fields['dataset'].widget = forms.RadioSelect(choices=dataset_choices)
 
-    def render(self, request):
+    def render(self):
         datasets = self.get_set('project/dataset/id')
         dataset_choices = [(dataset.set_index, dataset.value)for dataset in datasets]
 
-        self.store_in_session(request, 'dataset_choices', dataset_choices)
+        self.store_in_session(self.request, 'dataset_choices', dataset_choices)
 
         form = self.Form(
             dataset_choices=dataset_choices
         )
 
-        return render(request, 'plugins/exports_zenodo.html', {'form': form}, status=200)
+        return render(self.request, 'plugins/exports_zenodo.html', {'form': form}, status=200)
 
     def submit(self, request):
         dataset_choices = self.get_from_session(request, 'dataset_choices')
