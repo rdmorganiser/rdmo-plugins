@@ -39,16 +39,19 @@ class ZenodoExportProvider(OauthProviderMixin, Export):
 
         return render(self.request, 'plugins/exports_zenodo.html', {'form': form}, status=200)
 
-    def submit(self, request):
-        dataset_choices = self.get_from_session(request, 'dataset_choices')
-        form = self.Form(request.POST, dataset_choices=dataset_choices)
+    def submit(self):
+        dataset_choices = self.get_from_session(self.request, 'dataset_choices')
+        form = self.Form(self.request.POST, dataset_choices=dataset_choices)
+
+        if 'cancel' in self.request.POST:
+            return redirect('project', self.project.id)
 
         if form.is_valid():
             url = self.get_post_url()
             data = self.get_post_data(form.cleaned_data['dataset'])
-            return self.post(request, url, data)
+            return self.post(self.request, url, data)
         else:
-            return render(request, 'plugins/zenodo.html', {'form': form}, status=200)
+            return render(self.request, 'plugins/exports_zenodo.html', {'form': form}, status=200)
 
     def post_success(self, request, response):
         zenodo_url = response.json().get('links', {}).get('html')
