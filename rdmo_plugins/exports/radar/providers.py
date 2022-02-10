@@ -4,6 +4,7 @@ from django import forms
 from django.conf import settings
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
+from django.utils.safestring import mark_safe
 
 from rdmo.domain.models import Attribute
 from rdmo.projects.exports import Export
@@ -23,23 +24,35 @@ class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
         def __init__(self, *args, **kwargs):
             dataset_choices = kwargs.pop('dataset_choices')
             workspace_choices = kwargs.pop('workspace_choices')
+            radar_urls = kwargs.pop('radar_urls')
+
             super().__init__(*args, **kwargs)
 
-            self.fields['dataset'].widget = forms.RadioSelect(choices=dataset_choices)
+            dataset_choices_with_radar_urls = []
+            for dataset, radar_url in zip(dataset_choices, radar_urls):
+                set_index, label = dataset
+                if radar_url is not None:
+                    label += ' (Already exported to RADAR: <a href="{radar_url}" target="_blank">{radar_url}</a>)'.format(radar_url=radar_url)
+                dataset_choices_with_radar_urls.append((set_index, mark_safe(label)))
+
+            self.fields['dataset'].widget = forms.RadioSelect(choices=dataset_choices_with_radar_urls)
             self.fields['workspace'].widget = forms.RadioSelect(choices=workspace_choices)
 
     def render(self):
         datasets = self.get_set('project/dataset/id')
         dataset_choices = [(dataset.set_index, dataset.value) for dataset in datasets]
+        radar_urls = [self.get_text('project/dataset/radar_url', set_index=dataset.set_index) for dataset in datasets]
 
         self.store_in_session(self.request, 'dataset_choices', dataset_choices)
+        self.store_in_session(self.request, 'radar_urls', radar_urls)
         self.store_in_session(self.request, 'project_id', self.project.id)
 
         if self.pop_from_session(self.request, 'get') is True:
             workspace_choices = self.get_from_session(self.request, 'workspace_choices')
             form = self.Form(
                 dataset_choices=dataset_choices,
-                workspace_choices=workspace_choices
+                workspace_choices=workspace_choices,
+                radar_urls=radar_urls
             )
             return render(self.request, 'plugins/exports_radar.html', {'form': form}, status=200)
         else:
@@ -50,11 +63,13 @@ class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
     def submit(self):
         dataset_choices = self.get_from_session(self.request, 'dataset_choices')
         workspace_choices = self.get_from_session(self.request, 'workspace_choices')
+        radar_urls = self.get_from_session(self.request, 'radar_urls')
 
         form = self.Form(
             self.request.POST,
             dataset_choices=dataset_choices,
-            workspace_choices=workspace_choices
+            workspace_choices=workspace_choices,
+            radar_urls=radar_urls
         )
 
         if 'cancel' in self.request.POST:
