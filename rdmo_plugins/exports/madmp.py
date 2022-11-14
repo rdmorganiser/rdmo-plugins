@@ -173,7 +173,7 @@ class MaDMPExport(Export):
             ('Personal costs for data creation', 'project/costs/creation/personnel'),
             ('Non personal costs for data creation', 'project/costs/creation/non_personnel'),
             ('Personal costs for data usage', 'project/costs/usage/personnel'),
-            ('Non personal costs for data creation', 'project/costs/usage/non_personnel'),
+            ('Non personal costs for data usage', 'project/costs/usage/non_personnel'),
             ('Personal costs for data storage', 'project/costs/storage/personnel'),
             ('Non personal costs for data storage', 'project/costs/storage/non_personnel'),
             ('Personal costs for metadata curation', 'project/costs/metadata/personnel'),
