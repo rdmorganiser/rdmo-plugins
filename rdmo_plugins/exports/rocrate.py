@@ -1,8 +1,7 @@
-import zipfile
+import json
 from collections import defaultdict
 
 from django.http import HttpResponse
-from rdmo.core.exports import prettify_xml
 from rdmo.projects.exports import Export
 from rocrate.rocrate import ROCrate
 
@@ -137,6 +136,7 @@ class ROCrateExport(Export):
                 dataset_properties["description"] = dataset["descriptions"]
 
             crate.add_directory(dataset["filename"], properties=dataset_properties)
+        return crate
 
         # scheme_uri = {
         #     'INSI': 'http://www.isni.org/',
@@ -343,17 +343,6 @@ class ROCrateExport(Export):
         #         xml.endElement('fundingReferences')
 
         #     xml.endElement('resource')
-
-    def render(self):
-        response = HttpResponse(content_type="application/zip")
-        response["Content-Disposition"] = 'filename="%s.zip"' % self.project.title
-
-        zip_file = zipfile.ZipFile(response, "w")
-        for dataset in self.get_datasets():
-            xmldata = self.Renderer().render(dataset)
-            zip_file.writestr(dataset.get("file_name"), prettify_xml(xmldata))
-
-        return response
 
     def get_datasets(self):
         datasets = []
