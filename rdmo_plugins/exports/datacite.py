@@ -453,7 +453,7 @@ class DataCiteExport(Export):
                 if rights.option:
                     dataset['rightsList'].append({
                         'rights': rights.value,
-                        'rightsURI': self.rights_uri_options.get(rights.option.path)
+                        'rightsURI': self.rights_uri_options.get(rights.option.uri_path)
                     })
 
             # description

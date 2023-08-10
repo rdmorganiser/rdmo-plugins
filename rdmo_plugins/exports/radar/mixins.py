@@ -230,7 +230,7 @@ class RadarMixin(object):
             for subject_area in subject_areas:
                 if subject_area.is_true:
                     if subject_area.option:
-                        controlled_subject_area_name = self.controlled_subject_area_options.get(subject_area.option.path, 'Other')
+                        controlled_subject_area_name = self.controlled_subject_area_options.get(subject_area.option.uri_path, 'Other')
                     else:
                         controlled_subject_area_name = 'Other'
 
@@ -301,7 +301,7 @@ class RadarMixin(object):
             dataset['rights'] = []
             for rights in rights_list:
                 if rights.option:
-                    controlled_rights = self.controlled_rights_options.get(rights.option.path, 'Other')
+                    controlled_rights = self.controlled_rights_options.get(rights.option.uri_path, 'Other')
                 else:
                     controlled_rights = 'Other'
 
