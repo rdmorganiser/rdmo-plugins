@@ -3,14 +3,11 @@ from collections import defaultdict
 
 from django.http import HttpResponse
 from rdmo.core.exports import prettify_xml
-from rdmo.core.renderers import BaseXMLRenderer
 from rdmo.projects.exports import Export
-
 from rocrate.rocrate import ROCrate
 
 
 class ROCrateExport(Export):
-
     # identifier_type_options = {
     #     'identifier_type/doi': 'DOI',
     #     'identifier_type/other': 'OTHER'
@@ -121,27 +118,26 @@ class ROCrateExport(Export):
     # }
 
     def render(self):
-        response = HttpResponse(json.dumps({
-            'dmp': self.get_rocrate()
-        }, indent=2), content_type='application/json')
-        response['Content-Disposition'] = 'filename="%s.json"' % self.project.title
+        response = HttpResponse(
+            json.dumps({"dmp": self.get_rocrate()}, indent=2),
+            content_type="application/json",
+        )
+        response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
         return response
 
     def get_rocrate(self):
         crate = ROCrate()
         crate.name = self.project.title
         crate.description = self.project.description
-        crate.keywords = self.get_list('project/research_question/keywords')
-        
+        crate.keywords = self.get_list("project/research_question/keywords")
+
         for dataset in self.get_datasets():
-            dataset_properties = {
-                "name": dataset['title']
-            }
-            if dataset.get('description'):
-                dataset_properties['description'] = dataset['descriptions']
-            
-            crate.add_directory(dataset['filename'], properties=dataset_properties)
-        
+            dataset_properties = {"name": dataset["title"]}
+            if dataset.get("description"):
+                dataset_properties["description"] = dataset["descriptions"]
+
+            crate.add_directory(dataset["filename"], properties=dataset_properties)
+
         # scheme_uri = {
         #     'INSI': 'http://www.isni.org/',
         #     'ORCID': 'https://orcid.org',
@@ -349,27 +345,27 @@ class ROCrateExport(Export):
         #     xml.endElement('resource')
 
     def render(self):
-        response = HttpResponse(content_type='application/zip')
-        response['Content-Disposition'] = 'filename="%s.zip"' % self.project.title
+        response = HttpResponse(content_type="application/zip")
+        response["Content-Disposition"] = 'filename="%s.zip"' % self.project.title
 
-        zip_file = zipfile.ZipFile(response, 'w')
+        zip_file = zipfile.ZipFile(response, "w")
         for dataset in self.get_datasets():
             xmldata = self.Renderer().render(dataset)
-            zip_file.writestr(dataset.get('file_name'), prettify_xml(xmldata))
+            zip_file.writestr(dataset.get("file_name"), prettify_xml(xmldata))
 
         return response
 
     def get_datasets(self):
         datasets = []
-        for rdmo_dataset in self.get_set('project/dataset/id'):
+        for rdmo_dataset in self.get_set("project/dataset/id"):
             set_index = rdmo_dataset.set_index
             dataset = defaultdict(list)
 
             # file_name
-            dataset['file_name'] = './{}'.format(
-                self.get_text('project/dataset/identifier', set_index=set_index) or
-                self.get_text('project/dataset/id', set_index=set_index) or
-                str(set_index + 1)
+            dataset["file_name"] = "./{}".format(
+                self.get_text("project/dataset/identifier", set_index=set_index)
+                or self.get_text("project/dataset/id", set_index=set_index)
+                or str(set_index + 1)
             )
 
             # identifier
@@ -392,9 +388,11 @@ class ROCrateExport(Export):
             #         dataset['creators'].append(creator)
 
             # titles
-            dataset['title'] = self.get_text('project/dataset/title', set_index=set_index) or
-                                self.get_text('project/dataset/id', set_index=set_index) or
-                                'Dataset #{}'.format(set_index + 1)
+            dataset["title"] = (
+                self.get_text("project/dataset/title", set_index=set_index)
+                or self.get_text("project/dataset/id", set_index=set_index)
+                or "Dataset #{}".format(set_index + 1)
+            )
 
             # publisher
             # publisher = \
@@ -476,9 +474,11 @@ class ROCrateExport(Export):
             #         })
 
             # description
-            description = self.get_text('project/dataset/description', set_index=set_index)
+            description = self.get_text(
+                "project/dataset/description", set_index=set_index
+            )
             if description:
-                dataset['description'] = description
+                dataset["description"] = description
 
             # funding_references
             # for funder in self.get_set('project/funder/id'):
@@ -495,48 +495,71 @@ class ROCrateExport(Export):
 
         return datasets
 
-    def get_name(self, attribute, set_prefix='', set_index=0):
-        name_text = self.get_text(attribute + '/name', set_prefix=set_prefix, set_index=set_index)
+    def get_name(self, attribute, set_prefix="", set_index=0):
+        name_text = self.get_text(
+            attribute + "/name", set_prefix=set_prefix, set_index=set_index
+        )
         if name_text:
             name = {
-                'name': name_text,
-                'nameType': self.get_option(self.name_type_options, attribute + '/name_type',
-                                            set_prefix=set_prefix, set_index=set_index, default='Personal'),
+                "name": name_text,
+                "nameType": self.get_option(
+                    self.name_type_options,
+                    attribute + "/name_type",
+                    set_prefix=set_prefix,
+                    set_index=set_index,
+                    default="Personal",
+                ),
             }
 
             # contributor_name
-            contributor_type = self.get_option(self.contributor_type_options, attribute + '/contributor_type',
-                                               set_prefix=set_prefix, set_index=set_index, default='Other')
+            contributor_type = self.get_option(
+                self.contributor_type_options,
+                attribute + "/contributor_type",
+                set_prefix=set_prefix,
+                set_index=set_index,
+                default="Other",
+            )
             if contributor_type:
-                name['contributorType'] = contributor_type
+                name["contributorType"] = contributor_type
 
             # given_name
-            given_name = self.get_text(attribute + '/given_name', set_prefix=set_prefix, set_index=set_index)
+            given_name = self.get_text(
+                attribute + "/given_name", set_prefix=set_prefix, set_index=set_index
+            )
             if given_name:
-                name['givenName'] = given_name
+                name["givenName"] = given_name
 
             # family_name
-            family_name = self.get_text(attribute + '/family_name', set_prefix=set_prefix, set_index=set_index)
+            family_name = self.get_text(
+                attribute + "/family_name", set_prefix=set_prefix, set_index=set_index
+            )
             if family_name:
-                name['familyName'] = family_name
+                name["familyName"] = family_name
 
             # identifier
-            identifier = self.get_text(attribute + '/name_identifier', set_prefix=set_prefix, set_index=set_index)
+            identifier = self.get_text(
+                attribute + "/name_identifier",
+                set_prefix=set_prefix,
+                set_index=set_index,
+            )
             if identifier:
-                name['nameIdentifier'] = identifier
-                name['nameIdentifierScheme'] = self.get_option(self.name_identifier_scheme_options,
-                                                               attribute + '/name_identifier_scheme',
-                                                               set_prefix=set_prefix, set_index=set_index,
-                                                               default='ORCID')
+                name["nameIdentifier"] = identifier
+                name["nameIdentifierScheme"] = self.get_option(
+                    self.name_identifier_scheme_options,
+                    attribute + "/name_identifier_scheme",
+                    set_prefix=set_prefix,
+                    set_index=set_index,
+                    default="ORCID",
+                )
 
             # affiliations
-            affiliations = self.get_list(attribute + '/affiliation', set_prefix=set_prefix, set_index=set_index)
+            affiliations = self.get_list(
+                attribute + "/affiliation", set_prefix=set_prefix, set_index=set_index
+            )
             if affiliations:
-                name['affiliations'] = []
+                name["affiliations"] = []
                 for affiliation in affiliations:
-                    name['affiliations'].append({
-                        'affiliation': affiliation
-                    })
+                    name["affiliations"].append({"affiliation": affiliation})
 
             return name
         else:
