@@ -1,5 +1,7 @@
 import json
+import tempfile
 from collections import defaultdict
+from os.path import join as pj
 
 from django.http import HttpResponse
 from rdmo.projects.exports import Export
@@ -117,8 +119,11 @@ class ROCrateExport(Export):
     # }
 
     def render(self):
+        temp_folder = self.get_rocrate()
+        with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
+            file_contents = json.loads(json_file.read())
         response = HttpResponse(
-            json.dumps({"dmp": self.get_rocrate()}, indent=2),
+            json.dumps(file_contents, indent=2),
             content_type="application/json",
         )
         response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
@@ -136,7 +141,9 @@ class ROCrateExport(Export):
                 dataset_properties["description"] = dataset["descriptions"]
 
             crate.add_directory(dataset["filename"], properties=dataset_properties)
-        return crate
+        temp_folder = pj(tempfile.gettempdir(), "rocrate")
+        crate.write(temp_folder)
+        return temp_folder
 
         # scheme_uri = {
         #     'INSI': 'http://www.isni.org/',
