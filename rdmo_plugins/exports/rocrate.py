@@ -362,7 +362,7 @@ class ROCrateExport(Export):
             dataset = defaultdict(list)
 
             # file_name
-            dataset["file_name"] = "{}/".format(
+            dataset["file_name"] = "{}".format(
                 self.get_text("project/dataset/identifier", set_index=set_index)
                 or self.get_text("project/dataset/id", set_index=set_index)
                 or str(set_index + 1)
