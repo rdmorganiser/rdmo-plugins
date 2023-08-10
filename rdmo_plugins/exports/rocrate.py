@@ -141,7 +141,7 @@ class ROCrateExport(Export):
             dataset_properties = {"name": dataset["title"]}
             makedirs(pj(temp_folder, dataset["file_name"]), exist_ok=True)
             if dataset.get("description"):
-                dataset_properties["description"] = dataset["descriptions"]
+                dataset_properties["description"] = dataset["description"]
 
             crate.add_dataset(
                 pj(temp_folder, dataset["file_name"]), properties=dataset_properties
