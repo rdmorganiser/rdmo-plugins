@@ -1,6 +1,7 @@
 import json
 import tempfile
 from collections import defaultdict
+from os import makedirs
 from os.path import join as pj
 
 from django.http import HttpResponse
@@ -138,11 +139,13 @@ class ROCrateExport(Export):
         temp_folder = pj(tempfile.gettempdir(), "rocrate")
         for dataset in self.get_datasets():
             dataset_properties = {"name": dataset["title"]}
-            # makedirs(pj(temp_folder, dataset["file_name"]))
+            makedirs(pj(temp_folder, dataset["file_name"]), exist_ok=True)
             if dataset.get("description"):
                 dataset_properties["description"] = dataset["descriptions"]
 
-            crate.add_directory(dataset["file_name"], properties=dataset_properties)
+            crate.add_dataset(
+                pj(temp_folder, dataset["file_name"]), properties=dataset_properties
+            )
         crate.write(temp_folder)
         return temp_folder
 
@@ -359,7 +362,7 @@ class ROCrateExport(Export):
             dataset = defaultdict(list)
 
             # file_name
-            dataset["file_name"] = "{}".format(
+            dataset["file_name"] = "{}/".format(
                 self.get_text("project/dataset/identifier", set_index=set_index)
                 or self.get_text("project/dataset/id", set_index=set_index)
                 or str(set_index + 1)
