@@ -12,3 +12,16 @@ name = [
 ]
 description = "project/dataset/description"
 keywords = "project/dataset/keywords"
+
+["rocrate.model.person.Person"]
+name = [
+    "project/dataset/creator/name",
+    # future datacite domain attribute:
+    "project/dataset/contributor/name"
+]
+
+#["rocrate.model.organization.Organization"]
+#name = [
+#    "project/partner/name",
+#    "project/dataset/publisher"
+#]

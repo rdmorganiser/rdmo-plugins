@@ -8,6 +8,7 @@ from os.path import realpath
 
 import toml
 from django.http import HttpResponse
+from rdmo.core.utils import import_class
 from rdmo.projects.exports import Export
 from rocrate.rocrate import ROCrate
 
@@ -77,6 +78,10 @@ class ROCrateExport(Export):
                     for rdmo_dataset in self.get_set("project/dataset/id"):
                         set_index = rdmo_dataset.set_index
                         self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
+                elif "person" in key:
+                    for rdmo_persons in self.get_set("project/dataset/creator/name"):
+                        set_index = rdmo_persons.set_index
+                        self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
                 else:
                     self.iterate_node(crate_folder, crate, value, key)
             else:
@@ -104,6 +109,8 @@ class ROCrateExport(Export):
             makedirs(folder_path, exist_ok=True)
 
             getattr(crate, function)(folder_path, properties=node_properties)
+        else:
+            crate.add(import_class(function)(crate, properties=node_properties))
         # scheme_uri = {
         #     'INSI': 'http://www.isni.org/',
         #     'ORCID': 'https://orcid.org',
