@@ -132,8 +132,17 @@ class ROCrateExport(OauthProviderMixin, Export):
                 elif "person" in key:
                     for rdmo_persons in self.get_set("project/dataset/creator/name"):
                         set_index = rdmo_persons.set_index
-                        node_properties = self.iterate_node(crate, value, set_index=set_index)
-                        persons[set_index] = crate.add(import_class(key)(crate, properties=node_properties))
+                        if set_index in dataset_selection:
+                            node_properties = self.iterate_node(crate, value, set_index=set_index)
+
+                            found = False
+                            for pers in persons.values():
+                                if node_properties['name'] == pers.properties()['name']:
+                                    found = True
+                                    persons[set_index] = pers
+                                    break
+                            if found is False:
+                                persons[set_index] = crate.add(import_class(key)(crate, properties=node_properties))
                 else:
                     self.iterate_node(crate_folder, crate, value, key)
             else:
