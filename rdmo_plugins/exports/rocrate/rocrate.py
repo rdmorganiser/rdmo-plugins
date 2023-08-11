@@ -19,8 +19,8 @@ class ROCrateExport(Export):
     #             print(exc)
 
     def render(self):
-        m = self.load_mapping("default.toml")
-        print(m)
+        # m = self.load_mapping("default.toml")
+        # print(m)
         temp_folder = self.get_rocrate()
         with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
             file_contents = json.loads(json_file.read())
