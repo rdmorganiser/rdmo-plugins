@@ -147,10 +147,19 @@ class ROCrateExport(OauthProviderMixin, Export):
 
                             found = False
                             for pers in persons.values():
-                                if node_properties["name"] == pers.properties()["name"]:
-                                    found = True
-                                    persons[set_index] = pers
-                                    break
+                                try:
+                                    node_properties["name"]
+                                    pers.properties()["name"]
+                                except:
+                                    pass
+                                else:
+                                    if (
+                                        node_properties["name"]
+                                        == pers.properties()["name"]
+                                    ):
+                                        found = True
+                                        persons[set_index] = pers
+                                        break
                             if found is False:
                                 persons[set_index] = crate.add(
                                     import_class(key)(crate, properties=node_properties)
