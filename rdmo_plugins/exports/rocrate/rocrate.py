@@ -29,6 +29,11 @@ class ROCrateExport(OauthProviderMixin, Export):
 
             self.fields['dataset'].widget = forms.CheckboxSelectMultiple(choices=dataset_choices, attrs={"checked":"checked"})
 
+        def clean_dataset(self):
+            data = self.data.getlist('dataset')
+            data = list(map(int, data))
+            return data
+
     def load_mapping(self, file_name):
         scriptname = realpath(__file__)
         scriptdir = "/".join(scriptname.split("/")[:-1])
@@ -67,7 +72,8 @@ class ROCrateExport(OauthProviderMixin, Export):
 
         if form.is_valid():
             mapping = self.load_mapping("default.toml")
-            temp_folder = self.get_rocrate(mapping)
+            print(form.cleaned_data['dataset'])
+            temp_folder = self.get_rocrate(mapping, form.cleaned_data['dataset'])
             with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
                 file_contents = json.loads(json_file.read())
             response = HttpResponse(
@@ -79,12 +85,12 @@ class ROCrateExport(OauthProviderMixin, Export):
         else:
             return render(self.request, 'plugins/exports_rocrate.html', {'form': form}, status=200)
 
-    def get_rocrate(self, mapping):
+    def get_rocrate(self, mapping, dataset_selection):
         crate = ROCrate()
         crate.name = self.project.title
         # crate.description = self.project.description
         temp_folder = pj(tempfile.gettempdir(), "rocrate")
-        self.iterate_root(temp_folder, crate, mapping)
+        self.iterate_root(temp_folder, crate, mapping, dataset_selection=dataset_selection)
 
         # for dataset in self.get_datasets():
         #     dataset_properties = {"name": dataset["title"]}
@@ -98,7 +104,7 @@ class ROCrateExport(OauthProviderMixin, Export):
         crate.write(temp_folder)
         return temp_folder
 
-    def iterate_root(self, crate_folder, crate, tree):
+    def iterate_root(self, crate_folder, crate, tree, dataset_selection=[]):
         datasets = {}
         persons = {}
         for key, value in tree.items():
@@ -114,14 +120,16 @@ class ROCrateExport(OauthProviderMixin, Export):
                 if "dataset" in key:
                     for rdmo_dataset in self.get_set("project/dataset/id"):
                         set_index = rdmo_dataset.set_index
-                        node_properties = self.iterate_node(crate, value, set_index=set_index)
+                        print(set_index, dataset_selection)
+                        if set_index in dataset_selection:
+                            node_properties = self.iterate_node(crate, value, set_index=set_index)
 
-                        if 'file_name' in node_properties:
-                            file_name = node_properties.pop('file_name')
-                            folder_path = pj(crate_folder, file_name)
-                            makedirs(folder_path, exist_ok=True)
+                            if 'file_name' in node_properties:
+                                file_name = node_properties.pop('file_name')
+                                folder_path = pj(crate_folder, file_name)
+                                makedirs(folder_path, exist_ok=True)
 
-                        datasets[set_index] = getattr(crate, key)(folder_path, properties=node_properties)
+                            datasets[set_index] = getattr(crate, key)(folder_path, properties=node_properties)
 
                 elif "person" in key:
                     for rdmo_persons in self.get_set("project/dataset/creator/name"):
