@@ -15,10 +15,10 @@ from rocrate.rocrate import ROCrate
 class ROCrateExport(Export):
     def load_mapping(self, file_name):
         scriptname = realpath(__file__)
-        scriptdir = "/".join(scriptname.split("/")[:-2])
+        scriptdir = "/".join(scriptname.split("/")[:-1])
         file_name_full = pj(scriptdir, file_name)
         if isfile(file_name_full) is False:
-            print("toml file does not exist: " + fn)
+            print("toml file does not exist: " + file_name_full)
         else:
             with open(file_name_full) as filedata:
                 try:
@@ -33,7 +33,7 @@ class ROCrateExport(Export):
     def render(self):
         mapping = self.load_mapping("default.toml")
         print(mapping)
-        temp_folder = self.get_rocrate()
+        temp_folder = self.get_rocrate(mapping)
         with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
             file_contents = json.loads(json_file.read())
         response = HttpResponse(
@@ -43,25 +43,67 @@ class ROCrateExport(Export):
         response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
         return response
 
-    def get_rocrate(self):
+    def get_rocrate(self, mapping):
         crate = ROCrate()
         crate.name = self.project.title
-        crate.description = self.project.description
-        crate.keywords = self.get_list("project/research_question/keywords")
-
+        # crate.description = self.project.description
         temp_folder = pj(tempfile.gettempdir(), "rocrate")
-        for dataset in self.get_datasets():
-            dataset_properties = {"name": dataset["title"]}
-            makedirs(pj(temp_folder, dataset["file_name"]), exist_ok=True)
-            if dataset.get("description"):
-                dataset_properties["description"] = dataset["description"]
+        self.iterate_root(temp_folder, crate, mapping)
 
-            crate.add_dataset(
-                pj(temp_folder, dataset["file_name"]), properties=dataset_properties
-            )
+        # for dataset in self.get_datasets():
+        #     dataset_properties = {"name": dataset["title"]}
+        #     makedirs(pj(temp_folder, dataset["file_name"]), exist_ok=True)
+        #     if dataset.get("description"):
+        #         dataset_properties["description"] = dataset["description"]
+
+        #     crate.add_dataset(
+        #         pj(temp_folder, dataset["file_name"]), properties=dataset_properties
+        #     )
         crate.write(temp_folder)
         return temp_folder
 
+    def iterate_root(self, crate_folder, crate, tree):
+        for key, value in tree.items():
+            if isinstance(value, str):
+                setattr(crate, key, ", ".join(self.get_list(value)))
+            elif isinstance(value, list):
+                for val in value:
+                    db_val = self.get_list(val)
+                    if db_val:
+                        setattr(crate, key, ", ".join(db_val))
+                        break
+            elif isinstance(value, dict):
+                if "dataset" in key:
+                    for rdmo_dataset in self.get_set("project/dataset/id"):
+                        set_index = rdmo_dataset.set_index
+                        self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
+                else:
+                    self.iterate_node(crate_folder, crate, value, key)
+            else:
+                raise ValueError('Expected string or list as value for ro crate config')
+
+    def iterate_node(self, crate_folder, crate, tree, function, set_index=None):
+        node_properties = {}
+        for key, value in tree.items():
+            if isinstance(value, str):
+                node_properties[key] = ", ".join(self.get_list(value, set_index=set_index))
+            elif isinstance(value, list):
+                for val in value:
+                    db_val = self.get_list(val, set_index=set_index)
+                    if db_val:
+                        node_properties[key] = ", ".join(db_val)
+                        break
+            elif isinstance(value, dict):
+                self.iterate_node(crate, value, key, set_index=set_index)
+            else:
+                raise ValueError('Expected string or list as value for ro crate config')
+
+        if 'file_name' in node_properties:
+            file_name = node_properties.pop('file_name')
+            folder_path = pj(crate_folder, file_name)
+            makedirs(folder_path, exist_ok=True)
+
+            getattr(crate, function)(folder_path, properties=node_properties)
         # scheme_uri = {
         #     'INSI': 'http://www.isni.org/',
         #     'ORCID': 'https://orcid.org',
