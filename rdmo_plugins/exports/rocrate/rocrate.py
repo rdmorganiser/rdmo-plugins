@@ -79,11 +79,20 @@ class ROCrateExport(Export):
                 if "dataset" in key:
                     for rdmo_dataset in self.get_set("project/dataset/id"):
                         set_index = rdmo_dataset.set_index
-                        datasets[set_index] = self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
+                        node_properties = self.iterate_node(crate, value, set_index=set_index)
+
+                        if 'file_name' in node_properties:
+                            file_name = node_properties.pop('file_name')
+                            folder_path = pj(crate_folder, file_name)
+                            makedirs(folder_path, exist_ok=True)
+
+                        datasets[set_index] = getattr(crate, key)(folder_path, properties=node_properties)
+
                 elif "person" in key:
                     for rdmo_persons in self.get_set("project/dataset/creator/name"):
                         set_index = rdmo_persons.set_index
-                        persons[set_index] = self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
+                        node_properties = self.iterate_node(crate, value, set_index=set_index)
+                        persons[set_index] = crate.add(import_class(key)(crate, properties=node_properties))
                 else:
                     self.iterate_node(crate_folder, crate, value, key)
             else:
@@ -93,7 +102,7 @@ class ROCrateExport(Export):
             if set_index in persons:
                 dataset["author"] = persons[set_index]
 
-    def iterate_node(self, crate_folder, crate, tree, function, set_index=None):
+    def iterate_node(self, crate, tree, set_index=None):
         node_properties = {}
         for key, value in tree.items():
             if isinstance(value, str):
@@ -108,15 +117,8 @@ class ROCrateExport(Export):
                 self.iterate_node(crate, value, key, set_index=set_index)
             else:
                 raise ValueError('Expected string or list as value for ro crate config')
+        return node_properties
 
-        if 'file_name' in node_properties:
-            file_name = node_properties.pop('file_name')
-            folder_path = pj(crate_folder, file_name)
-            makedirs(folder_path, exist_ok=True)
-
-            return getattr(crate, function)(folder_path, properties=node_properties)
-        else:
-            return crate.add(import_class(function)(crate, properties=node_properties))
         # scheme_uri = {
         #     'INSI': 'http://www.isni.org/',
         #     'ORCID': 'https://orcid.org',
