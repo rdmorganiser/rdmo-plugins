@@ -64,6 +64,8 @@ class ROCrateExport(Export):
         return temp_folder
 
     def iterate_root(self, crate_folder, crate, tree):
+        datasets = {}
+        persons = {}
         for key, value in tree.items():
             if isinstance(value, str):
                 setattr(crate, key, ", ".join(self.get_list(value)))
@@ -77,15 +79,19 @@ class ROCrateExport(Export):
                 if "dataset" in key:
                     for rdmo_dataset in self.get_set("project/dataset/id"):
                         set_index = rdmo_dataset.set_index
-                        self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
+                        datasets[set_index] = self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
                 elif "person" in key:
                     for rdmo_persons in self.get_set("project/dataset/creator/name"):
                         set_index = rdmo_persons.set_index
-                        self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
+                        persons[set_index] = self.iterate_node(crate_folder, crate, value, key, set_index=set_index)
                 else:
                     self.iterate_node(crate_folder, crate, value, key)
             else:
                 raise ValueError('Expected string or list as value for ro crate config')
+
+        for set_index, dataset in datasets.items():
+            if set_index in persons:
+                dataset["author"] = persons[set_index]
 
     def iterate_node(self, crate_folder, crate, tree, function, set_index=None):
         node_properties = {}
@@ -108,9 +114,9 @@ class ROCrateExport(Export):
             folder_path = pj(crate_folder, file_name)
             makedirs(folder_path, exist_ok=True)
 
-            getattr(crate, function)(folder_path, properties=node_properties)
+            return getattr(crate, function)(folder_path, properties=node_properties)
         else:
-            crate.add(import_class(function)(crate, properties=node_properties))
+            return crate.add(import_class(function)(crate, properties=node_properties))
         # scheme_uri = {
         #     'INSI': 'http://www.isni.org/',
         #     'ORCID': 'https://orcid.org',
