@@ -4,120 +4,20 @@ from collections import defaultdict
 from os import makedirs
 from os.path import join as pj
 
+import yaml
 from django.http import HttpResponse
 from rdmo.projects.exports import Export
 from rocrate.rocrate import ROCrate
 
 
 class ROCrateExport(Export):
-    # identifier_type_options = {
-    #     'identifier_type/doi': 'DOI',
-    #     'identifier_type/other': 'OTHER'
-    # }
-
-    # language_options = {
-    #     'language/en': 'en-US',
-    #     'language/de': 'de-de'
-    # }
-
-    # name_type_options = {
-    #     'name_type/personal': 'Personal',
-    #     'name_type/organizational': 'Organizational'
-    # }
-
-    # name_identifier_scheme_options = {
-    #     'name_identifier_scheme/orcid': 'ORCID',
-    #     'name_identifier_scheme/insi': 'INSI',
-    #     'name_identifier_scheme/ror': 'ROR',
-    #     'name_identifier_scheme/grid': 'GRID'
-    # }
-
-    # contributor_type_options = {
-    #     'contributor_type/contact_persion': 'ContactPerson',
-    #     'contributor_type/data_collector': 'DataCollector',
-    #     'contributor_type/data_curator': 'DataCurator',
-    #     'contributor_type/data_manager': 'DataManager',
-    #     'contributor_type/distributor': 'Distributor',
-    #     'contributor_type/editor': 'Editor',
-    #     'contributor_type/hosting_institution': 'HostingInstitution',
-    #     'contributor_type/producer': 'Producer',
-    #     'contributor_type/project_leader': 'ProjectLeader',
-    #     'contributor_type/project_manager': 'ProjectManager',
-    #     'contributor_type/project_member': 'ProjectMember',
-    #     'contributor_type/registration_agency': 'RegistrationAgency',
-    #     'contributor_type/registration_authority': 'RegistrationAuthority',
-    #     'contributor_type/related_person': 'RelatedPerson',
-    #     'contributor_type/researcher': 'Researcher',
-    #     'contributor_type/research_group': 'ResearchGroup',
-    #     'contributor_type/rights_holder': 'RightsHolder',
-    #     'contributor_type/sponsor': 'Sponsor',
-    #     'contributor_type/supervisor': 'Supervisor',
-    #     'contributor_type/work_package_leader': 'WorkPackageLeader',
-    #     'contributor_type/other': 'Other'
-    # }
-
-    # resource_type_general_options = {
-    #     'resource_type_general/audiovisual': 'Audiovisual',
-    #     'resource_type_general/collection': 'Collection',
-    #     'resource_type_general/data_paper': 'DataPaper',
-    #     'resource_type_general/dataset': 'Dataset',
-    #     'resource_type_general/event': 'Event',
-    #     'resource_type_general/image': 'Image',
-    #     'resource_type_general/interactive_resource': 'InteractiveResource',
-    #     'resource_type_general/model': 'Model',
-    #     'resource_type_general/physical_object': 'PhysicalObject',
-    #     'resource_type_general/service': 'Service',
-    #     'resource_type_general/software': 'Software',
-    #     'resource_type_general/sound': 'Sound',
-    #     'resource_type_general/text': 'Text',
-    #     'resource_type_general/workflow': 'Workflow',
-    #     'resource_type_general/other': 'Other'
-    # }
-
-    # rights_uri_options = {
-    #     'dataset_license_types/71': 'https://creativecommons.org/licenses/by/4.0/',
-    #     'dataset_license_types/73': 'https://creativecommons.org/licenses/by-nc/4.0/',
-    #     'dataset_license_types/74': 'https://creativecommons.org/licenses/by-nd/4.0/',
-    #     'dataset_license_types/75': 'https://creativecommons.org/licenses/by-sa/4.0/',
-    #     'dataset_license_types/cc0': 'https://creativecommons.org/publicdomain/zero/1.0/deed.de'
-    # }
-
-    # relation_type_options = {
-    #     'relation_type/is_cited_by': 'IsCitedBy',
-    #     'relation_type/cites': 'Cites',
-    #     'relation_type/is_supplement_to': 'IsSupplementTo',
-    #     'relation_type/is_supplemented_by': 'IsSupplementedBy',
-    #     'relation_type/is_continued_by': 'IsContinuedBy',
-    #     'relation_type/continues': 'Continues',
-    #     'relation_type/describes': 'Describes',
-    #     'relation_type/is_described_by': 'IsDescribedBy',
-    #     'relation_type/has_metadata': 'HasMetadata',
-    #     'relation_type/is_metadata_for': 'IsMetadataFor',
-    #     'relation_type/has_version': 'HasVersion',
-    #     'relation_type/is_version_of': 'IsVersionOf',
-    #     'relation_type/is_new_version_of': 'IsNewVersionOf',
-    #     'relation_type/is_previous_version_of': 'IsPreviousVersionOf',
-    #     'relation_type/is_part_of': 'IsPartOf',
-    #     'relation_type/has_part': 'HasPart',
-    #     'relation_type/is_published_in': 'IsPublishedIn',
-    #     'relation_type/is_referenced_by': 'IsReferencedBy',
-    #     'relation_type/references': 'References',
-    #     'relation_type/is_documented_by': 'IsDocumentedBy',
-    #     'relation_type/documents': 'Documents',
-    #     'relation_type/is_compiled_by': 'IsCompiledBy',
-    #     'relation_type/Compiles': 'Compiles',
-    #     'relation_type/is_variant_form_of': 'IsVariantFormOf',
-    #     'relation_type/is_original_form_of': 'IsOriginalFormOf',
-    #     'relation_type/is_identical_to': 'IsIdenticalTo',
-    #     'relation_type/is_reviewed_by': 'IsReviewedBy',
-    #     'relation_type/reviews': 'Reviews',
-    #     'relation_type/is_derived_from': 'IsDerivedFrom',
-    #     'relation_type/is_source_of': 'IsSourceOf',
-    #     'relation_type/is_required_by': 'IsRequiredBy',
-    #     'relation_type/requires': 'Requires',
-    #     'relation_type/obsoletes': 'Obsoletes',
-    #     'relation_type/is_obsoleted_by': 'IsObsoletedBy'
-    # }
+    def load_mapping(self, file_name):
+        mapping_file = "default.yaml"
+        with open(file_name, "r") as stream:
+            try:
+                return yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
 
     def render(self):
         temp_folder = self.get_rocrate()
