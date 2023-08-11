@@ -1,2 +1,13 @@
+keywords = "project/research_question/keywords"
+
 [add_dataset]
-key = "value"
+file_name = [
+    "project/dataset/identifier",
+    "project/dataset/id"
+]
+name = [
+    "project/dataset/title",
+    "project/dataset/id"
+]
+description = "project/dataset/description"
+keywords = "project/dataset/keywords"
