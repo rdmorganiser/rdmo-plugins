@@ -1,10 +1,10 @@
 import json
 import tempfile
 from collections import defaultdict
-from os import makedirs
+from os import makedirs, path
 from os.path import join as pj
 
-import yaml
+import toml
 from django.http import HttpResponse
 from rdmo.projects.exports import Export
 from rocrate.rocrate import ROCrate
@@ -12,7 +12,7 @@ from rocrate.rocrate import ROCrate
 
 class ROCrateExport(Export):
     def load_mapping(self, file_name):
-        mapping_file = "default.yaml"
+        p = pj(path.dirname(path.abspath(__file__)) + '/', file_name))
         with open(file_name, "r") as stream:
             try:
                 return yaml.safe_load(stream)
@@ -20,6 +20,8 @@ class ROCrateExport(Export):
                 print(exc)
 
     def render(self):
+        m = self.load_mapping("default.toml")
+        print(m)
         temp_folder = self.get_rocrate()
         with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
             file_contents = json.loads(json_file.read())
