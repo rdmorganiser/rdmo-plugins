@@ -72,7 +72,6 @@ class ROCrateExport(OauthProviderMixin, Export):
 
         if form.is_valid():
             mapping = self.load_mapping("default.toml")
-            print(form.cleaned_data['dataset'])
             temp_folder = self.get_rocrate(mapping, form.cleaned_data['dataset'])
             with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
                 file_contents = json.loads(json_file.read())
@@ -120,7 +119,6 @@ class ROCrateExport(OauthProviderMixin, Export):
                 if "dataset" in key:
                     for rdmo_dataset in self.get_set("project/dataset/id"):
                         set_index = rdmo_dataset.set_index
-                        print(set_index, dataset_selection)
                         if set_index in dataset_selection:
                             node_properties = self.iterate_node(crate, value, set_index=set_index)
 
