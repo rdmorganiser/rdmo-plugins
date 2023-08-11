@@ -1,0 +1,11 @@
+{% extends 'core/page.html' %}
+{% load i18n %}
+{% load core_tags %}
+
+{% block page %}
+
+    <h1>{% trans 'Export RO-Crate' %}</h1>
+
+    {% bootstrap_form submit=_('Export RO-Crate') %}
+
+{% endblock %}

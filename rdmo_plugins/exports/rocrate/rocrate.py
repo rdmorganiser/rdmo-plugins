@@ -7,13 +7,28 @@ from os.path import join as pj
 from os.path import realpath
 
 import toml
+from django import forms
 from django.http import HttpResponse
+from django.shortcuts import redirect, render
+from django.utils.translation import gettext_lazy as _
+
 from rdmo.core.utils import import_class
 from rdmo.projects.exports import Export
 from rocrate.rocrate import ROCrate
+from rdmo.services.providers import OauthProviderMixin
 
 
-class ROCrateExport(Export):
+class ROCrateExport(OauthProviderMixin, Export):
+    class Form(forms.Form):
+
+        dataset = forms.CharField(label=_('Select dataset of your project'))
+
+        def __init__(self, *args, **kwargs):
+            dataset_choices = kwargs.pop('dataset_choices')
+            super().__init__(*args, **kwargs)
+
+            self.fields['dataset'].widget = forms.CheckboxSelectMultiple(choices=dataset_choices, attrs={"checked":"checked"})
+
     def load_mapping(self, file_name):
         scriptname = realpath(__file__)
         scriptdir = "/".join(scriptname.split("/")[:-1])
@@ -32,17 +47,37 @@ class ROCrateExport(Export):
         return None
 
     def render(self):
-        mapping = self.load_mapping("default.toml")
-        print(mapping)
-        temp_folder = self.get_rocrate(mapping)
-        with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
-            file_contents = json.loads(json_file.read())
-        response = HttpResponse(
-            json.dumps(file_contents, indent=2),
-            content_type="application/json",
+        datasets = self.get_set('project/dataset/id')
+        dataset_choices = [(dataset.set_index, dataset.value)for dataset in datasets]
+
+        self.store_in_session(self.request, 'dataset_choices', dataset_choices)
+
+        form = self.Form(
+            dataset_choices=dataset_choices
         )
-        response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
-        return response
+
+        return render(self.request, 'plugins/exports_rocrate.html', {'form': form}, status=200)
+
+    def submit(self):
+        dataset_choices = self.get_from_session(self.request, 'dataset_choices')
+        form = self.Form(self.request.POST, dataset_choices=dataset_choices)
+
+        if 'cancel' in self.request.POST:
+            return redirect('project', self.project.id)
+
+        if form.is_valid():
+            mapping = self.load_mapping("default.toml")
+            temp_folder = self.get_rocrate(mapping)
+            with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
+                file_contents = json.loads(json_file.read())
+            response = HttpResponse(
+                json.dumps(file_contents, indent=2),
+                content_type="application/json",
+            )
+            response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
+            return response
+        else:
+            return render(self.request, 'plugins/exports_rocrate.html', {'form': form}, status=200)
 
     def get_rocrate(self, mapping):
         crate = ROCrate()
