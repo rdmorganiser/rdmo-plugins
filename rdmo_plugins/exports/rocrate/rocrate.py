@@ -2,25 +2,37 @@ import json
 import tempfile
 from collections import defaultdict
 from os import makedirs
+from os.path import isfile
 from os.path import join as pj
+from os.path import realpath
 
+import toml
 from django.http import HttpResponse
 from rdmo.projects.exports import Export
 from rocrate.rocrate import ROCrate
 
 
 class ROCrateExport(Export):
-    # def load_mapping(self, file_name):
-    #     p = pj(path.dirname(path.abspath(__file__)) + '/', file_name)))
-    #     with open(file_name, "r") as stream:
-    #         try:
-    #             return yaml.safe_load(stream)
-    #         except yaml.YAMLError as exc:
-    #             print(exc)
+    def load_mapping(self, file_name):
+        scriptname = realpath(__file__)
+        scriptdir = "/".join(scriptname.split("/")[:-2])
+        file_name_full = pj(scriptdir, file_name)
+        if isfile(file_name_full) is False:
+            print("toml file does not exist: " + fn)
+        else:
+            with open(file_name_full) as filedata:
+                try:
+                    data = filedata.read()
+                    d = toml.loads(data)
+                    return d
+                except Exception as e:
+                    print("toml decode error: " + str(file_name_full))
+                    raise (e)
+        return None
 
     def render(self):
-        # m = self.load_mapping("default.toml")
-        # print(m)
+        mapping = self.load_mapping("default.toml")
+        print(mapping)
         temp_folder = self.get_rocrate()
         with open(pj(temp_folder, "ro-crate-metadata.json")) as json_file:
             file_contents = json.loads(json_file.read())
