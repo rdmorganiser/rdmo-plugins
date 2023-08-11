@@ -105,6 +105,7 @@ class ROCrateExport(OauthProviderMixin, Export):
         #         pj(temp_folder, dataset["file_name"]), properties=dataset_properties
         #     )
         crate.write(temp_folder)
+        crate.write_zip(temp_folder + ".zip")
         return temp_folder
 
     def iterate_root(self, crate_folder, crate, tree, dataset_selection=[]):
