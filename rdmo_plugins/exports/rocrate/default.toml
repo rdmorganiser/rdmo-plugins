@@ -1,7 +1,7 @@
 description = "project/research_question/title"
 keywords = "project/research_question/keywords"
 
-[add_dataset]
+[dataset]
 file_name = [
     "project/dataset/identifier",
     "project/dataset/id"
@@ -11,7 +11,6 @@ name = [
     "project/dataset/id"
 ]
 description = "project/dataset/description"
-keywords = "project/dataset/keywords"
 
 ["rocrate.model.person.Person"]
 name = [
