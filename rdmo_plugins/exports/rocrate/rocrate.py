@@ -16,6 +16,7 @@ from rdmo.core.utils import import_class
 from rdmo.projects.exports import Export
 from rdmo.services.providers import OauthProviderMixin
 from rocrate.rocrate import ROCrate
+from rocrate.model.person import Person
 
 
 class ROCrateExport(OauthProviderMixin, Export):
@@ -95,23 +96,38 @@ class ROCrateExport(OauthProviderMixin, Export):
         temp_folder = pj(tempfile.gettempdir(), "rocrate")
         rocrate_results = {}
         rocrate_results['datasets'] = {}
+        rocrate_results['persons'] = {}
         for set_index in dataset_selection:
             # get_rocrate_object_from_rdmo_project_dataset_id
-            dataset = self.get_dataset_by_id(config['dataset'], set_index)
+            dataset = self.get_text_values_by_dataset(config['dataset'], set_index)
             rocrate_results['datasets'][set_index] = dataset
-            # persons = self.get_person_by_dataset_id(config["rocrate.model.person.Person"], set_index)
-        
+            person = self.get_text_values_by_dataset(config['dataset_person'], set_index)
+            rocrate_results['persons'][set_index] = person
+          
         # self.iterate_root(
         #     temp_folder, crate, config, dataset_selection=dataset_selection
         # )
         # if "file_name" in node_properties:
+        rocrate_person_by_dataset = {}
+        for key, value in rocrate_results["persons"].items():
+            ro_person = Person(crate, properties=value)
+            if ro_person not in rocrate_person_by_dataset.values():
+                # breakpoint()
+                rocrate_person_by_dataset[key] = crate.add(ro_person)
+
         for key, value in rocrate_results["datasets"].items():
             file_name = value.pop("file_name")
             folder_path = pj(temp_folder, file_name)
             makedirs(folder_path, exist_ok=True)
+            value['author'] = rocrate_person_by_dataset[key].id.replace("#", "@")
             crate.add_dataset(folder_path, properties=value)
+            
         
-
+        
+            # Person(crate, properties=person)
+            # crate.add()
+            # persons = self.get_person_by_dataset_id(config["rocrate.model.person.Person"], set_index)
+                
         crate.write(temp_folder)
         crate.write_zip(temp_folder + ".zip")
         return temp_folder
@@ -124,7 +140,7 @@ class ROCrateExport(OauthProviderMixin, Export):
                 return text
 
 
-    def get_dataset_by_id(self, dataset_config, set_index) -> dict:
+    def get_text_values_by_dataset(self, dataset_config, set_index) -> dict:
         result = {}
         dataset_config.update({key: [value] for key, value in dataset_config.items() if isinstance(value, str)})
         for key, value in dataset_config.items():
@@ -135,35 +151,39 @@ class ROCrateExport(OauthProviderMixin, Export):
         return result                
 
     
-    def get_persons(self, person_config, set_index) -> dict:
+    def get_persons_for_dataset(self, person_config, set_index) -> dict:       
         persons = {}
-        rdmo_persons = self.get_values("project/dataset/creator/name", set_index=set_index)
-        set_index = rdmo_persons.set_index
-        # if set_index in dataset_selection:
-        node_properties = self.iterate_node(
-            crate, value, set_index=set_index
-        )
 
-        found = False
-        for pers in persons.values():
-            try:
-                node_properties["name"]
-                pers.properties()["name"]
-            except:
-                pass
-            else:
-                if (
-                    node_properties["name"]
-                    == pers.properties()["name"]
-                ):
-                    found = True
-                    persons[set_index] = pers
-                    break
-        if found is False:
-            persons[set_index] = crate.add(
-                import_class(key)(crate, properties=node_properties)
-            )
-        return persons
+
+
+
+        # rdmo_persons = self.get_values("project/dataset/creator/name", set_index=set_index)
+        # set_index = rdmo_persons.set_index
+        # # if set_index in dataset_selection:
+        # node_properties = self.iterate_node(
+        #     crate, value, set_index=set_index
+        # )
+
+        # found = False
+        # for pers in persons.values():
+        #     try:
+        #         node_properties["name"]
+        #         pers.properties()["name"]
+        #     except:
+        #         pass
+        #     else:
+        #         if (
+        #             node_properties["name"]
+        #             == pers.properties()["name"]
+        #         ):
+        #             found = True
+        #             persons[set_index] = pers
+        #             break
+        # if found is False:
+        #     persons[set_index] = crate.add(
+        #         import_class(key)(crate, properties=node_properties)
+        #     )
+        # return persons
 
     def iterate_root(self, crate_folder, crate, tree, dataset_selection=[]):
         datasets = {}
