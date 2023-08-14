@@ -12,7 +12,7 @@ name = [
 ]
 description = "project/dataset/description"
 
-["rocrate.model.person.Person"]
+[dataset_person]
 name = [
     "project/dataset/creator/name",
     # future datacite domain attribute:
