@@ -117,6 +117,7 @@ class ROCrateExport(OauthProviderMixin, Export):
 
             value["author"] = rocrate_person_ids_by_dataset[key]
             folder_path = temp_folder / file_name
+            folder_path.mkdir(parents=True, exist_ok=True)
             crate.add_dataset(folder_path, properties=value)
 
         crate.write(temp_folder)
