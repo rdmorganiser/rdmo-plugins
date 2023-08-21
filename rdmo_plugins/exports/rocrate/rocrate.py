@@ -87,22 +87,13 @@ class ROCrateExport(OauthProviderMixin, Export):
         crate = ROCrate()
         crate.name = self.project.title
 
-        project_config = config.pop("project")
-        project_config_text = self.get_text_values_from_project(project_config)
+        project_config_text = self.get_text_values_from_project(config.pop("project"))
         for key, value in project_config_text.items():
             setattr(crate, key, value)
 
-        datasets = {}
-        persons = {}
-        dataset_config = config.pop("dataset")
-        dataset_person_config = config.pop("dataset_person")
-        for set_index in dataset_selection:
-            # get_rocrate_object_from_rdmo_project_dataset_id
-            dataset = self.get_text_values_by_dataset(dataset_config, set_index)
-            datasets[set_index] = dataset
-            person = self.get_text_values_by_dataset(dataset_person_config, set_index)
-            persons[set_index] = person
-
+        datasets = self.collect_crate_data_for_selection (config.pop("dataset"), dataset_selection)
+        persons = self.collect_crate_data_for_selection (config.pop("dataset_person"), dataset_selection)
+  
         rocrate_person_ids_by_dataset = {}
         for key, value in persons.items():
             ro_person = Person(crate, properties=value)
@@ -120,9 +111,12 @@ class ROCrateExport(OauthProviderMixin, Export):
             folder_path.mkdir(parents=True, exist_ok=True)
             crate.add_dataset(folder_path, properties=value)
 
-        crate.write(temp_folder)
-        crate.write_zip(temp_folder.with_suffix(".zip"))
-        return temp_folder
+    def collect_crate_data_for_selection (self, config, dataset_selection):
+        data = {}
+        for set_index in dataset_selection:
+            dataset = self.get_text_values_by_dataset(config, set_index)
+            data[set_index] = dataset
+        return data
 
 
     def get_text_from_item_list(self, values, set_index) -> str:
