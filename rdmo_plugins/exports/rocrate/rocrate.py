@@ -67,7 +67,11 @@ class ROCrateExport(OauthProviderMixin, Export):
         if form.is_valid():
             config = self.load_config("default.toml")
             dataset_selection = form.cleaned_data["dataset"]
-            temp_folder = self.get_rocrate(config, dataset_selection)
+            temp_folder = Path(tempfile.gettempdir()) / "rocrate"
+
+            crate = self.get_rocrate(config, dataset_selection)
+            crate.write(temp_folder)
+            crate.write_zip(temp_folder.with_suffix(".zip"))
 
             file_contents = json.loads(
                 Path(temp_folder / "ro-crate-metadata.json").read_text()
@@ -101,15 +105,13 @@ class ROCrateExport(OauthProviderMixin, Export):
                 crate.add(ro_person)
                 rocrate_person_ids_by_dataset[key] = {"@id": ro_person.id}
 
-        temp_folder = Path(tempfile.gettempdir()) / "rocrate"
-        temp_folder.mkdir(parents=True, exist_ok=True)
         for key, value in datasets.items():
             file_name = value.pop("file_name")
-
             value["author"] = rocrate_person_ids_by_dataset[key]
-            folder_path = temp_folder / file_name
-            folder_path.mkdir(parents=True, exist_ok=True)
-            crate.add_dataset(folder_path, properties=value)
+            crate.add_dataset(dest_path=file_name, properties=value)
+
+        return crate
+
 
     def collect_crate_data_for_selection (self, config, dataset_selection):
         data = {}
