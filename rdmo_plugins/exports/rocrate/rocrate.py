@@ -14,6 +14,9 @@ from rdmo.services.providers import OauthProviderMixin
 from rocrate.rocrate import ROCrate
 from rocrate.model.person import Person
 
+# Settings
+WEB_PREVIEW = False
+
 
 class ROCrateExport(OauthProviderMixin, Export):
     class Form(forms.Form):
@@ -67,25 +70,30 @@ class ROCrateExport(OauthProviderMixin, Export):
         if form.is_valid():
             config = self.load_config("default.toml")
             dataset_selection = form.cleaned_data["dataset"]
-            temp_folder = Path(tempfile.gettempdir()) / "rocrate"
-
             crate = self.get_rocrate(config, dataset_selection)
-            crate.write(temp_folder)
-            crate.write_zip(temp_folder.with_suffix(".zip"))
+        
+            if WEB_PREVIEW:
+                crate.write(temp_folder)
+                file_contents = json.loads(
+                    Path(temp_folder / "ro-crate-metadata.json").read_text()
+                )
+                response = HttpResponse(
+                    json.dumps(file_contents, indent=2),
+                    content_type="application/json",
+                )
+                response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
+                return response
+            
+            # zip export
+            ZIP_FILE_NAME = "rocrate.zip"
+            crate.write_zip (ZIP_FILE_NAME)
+            response = HttpResponse(open(ZIP_FILE_NAME, 'rb'), content_type='application/zip')
+            response['Content-Disposition'] = f'filename={ZIP_FILE_NAME}'
+            return response 
 
-            file_contents = json.loads(
-                Path(temp_folder / "ro-crate-metadata.json").read_text()
-            )
-            response = HttpResponse(
-                json.dumps(file_contents, indent=2),
-                content_type="application/json",
-            )
-            response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
-            return response
-        else:
-            return render(
-                self.request, "plugins/exports_rocrate.html", {"form": form}, status=200
-            )
+        return render(
+            self.request, "plugins/exports_rocrate.html", {"form": form}, status=200
+        )
 
     def get_rocrate(self, config, dataset_selection):
         crate = ROCrate()
