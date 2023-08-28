@@ -13,10 +13,6 @@ logger = logging.getLogger(__name__)
 
 class ZenodoExportProvider(OauthProviderMixin, Export):
 
-    authorize_url = 'https://sandbox.zenodo.org/oauth/authorize'
-    token_url = 'https://sandbox.zenodo.org/oauth/token'
-    deposit_url = 'https://sandbox.zenodo.org/api/deposit/depositions'
-
     class Form(forms.Form):
 
         dataset = forms.CharField(label=_('Select dataset of your project'))
@@ -70,6 +66,22 @@ class ZenodoExportProvider(OauthProviderMixin, Export):
     @property
     def client_secret(self):
         return settings.ZENODO_PROVIDER['client_secret']
+
+    @property
+    def zenodo_url(self):
+        return settings.ZENODO_PROVIDER.get('zenodo_url', 'https://sandbox.zenodo.org').strip('/')
+
+    @property
+    def authorize_url(self):
+        return '{}/oauth/authorize'.format(self.zenodo_url)
+
+    @property
+    def token_url(self):
+        return '{}/oauth/token'.format(self.zenodo_url)
+
+    @property
+    def deposit_url(self):
+        return '{}/api/deposit/depositions'.format(self.zenodo_url)
 
     @property
     def redirect_path(self):
