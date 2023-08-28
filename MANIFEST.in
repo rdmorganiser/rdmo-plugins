@@ -1,0 +1,6 @@
+graft rdmo_plugins
+
+global-exclude __pycache__
+global-exclude *.py[co]
+
+include requirements.txt
