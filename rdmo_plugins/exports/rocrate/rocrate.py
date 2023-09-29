@@ -10,7 +10,6 @@ from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
 
 from rdmo.projects.exports import Export
-from rdmo.services.providers import OauthProviderMixin
 
 from rocrate.rocrate import ROCrate
 from rocrate.model.person import Person
@@ -21,7 +20,22 @@ try:
 except AttributeError:
     WEB_PREVIEW = False
 
-class ROCrateExport(OauthProviderMixin, Export):
+
+def load_config(file_name):
+    toml_file = Path(__file__).parent / file_name
+    try:
+        toml_dict = toml.loads(toml_file.read_bytes().decode())
+        return toml_dict
+    except FileNotFoundError as exc:
+        raise exc from exc
+    except Exception as exc:
+        # TODO add toml.TOMLDecodeError later
+        raise ValueError(
+            "\nThe {} file is not a valid TOML file.\n\t{}".format(toml_file, exc)
+        ) from exc
+
+
+class ROCrateExport(Export):
     class Form(forms.Form):
         dataset = forms.CharField(label=_("Select dataset of your project"))
 
@@ -38,24 +52,11 @@ class ROCrateExport(OauthProviderMixin, Export):
             data = list(map(int, data))
             return data
 
-    def load_config(self, file_name):
-        toml_file = Path(__file__).parent / file_name
-        try:
-            toml_dict = toml.loads(toml_file.read_bytes().decode())
-            return toml_dict
-        except FileNotFoundError as exc:
-            raise exc from exc
-        except Exception as exc:
-            # TODO add toml.TOMLDecodeError later
-            raise ValueError(
-                "\nThe {} file is not a valid TOML file.\n\t{}".format(toml_file, exc)
-            ) from exc
-
     def render(self):
         datasets = self.get_set("project/dataset/id")
         dataset_choices = [(dataset.set_index, dataset.value) for dataset in datasets]
 
-        self.store_in_session(self.request, "dataset_choices", dataset_choices)
+        self.request.session[f"{self.class_name}.dataset_choices"] = dataset_choices
 
         form = self.Form(dataset_choices=dataset_choices)
 
@@ -64,14 +65,15 @@ class ROCrateExport(OauthProviderMixin, Export):
         )
 
     def submit(self):
-        dataset_choices = self.get_from_session(self.request, "dataset_choices")
+        dataset_choices = self.request.session[f"{self.class_name}.dataset_choices"]
+
         form = self.Form(self.request.POST, dataset_choices=dataset_choices)
 
         if "cancel" in self.request.POST:
             return redirect("project", self.project.id)
 
         if form.is_valid():
-            config = self.load_config("default.toml")
+            config = load_config("default.toml")
             dataset_selection = form.cleaned_data["dataset"]
             crate = self.get_rocrate(config, dataset_selection)
             temp_folder = Path(tempfile.gettempdir()) / "rocrate"
@@ -93,6 +95,7 @@ class ROCrateExport(OauthProviderMixin, Export):
             crate.write_zip (ZIP_FILE_NAME)
             response = HttpResponse(open(ZIP_FILE_NAME, 'rb'), content_type='application/zip')
             response['Content-Disposition'] = f'filename={ZIP_FILE_NAME}'
+            # self.post(self.request, url, data)
             return response
 
         return render(
@@ -124,7 +127,6 @@ class ROCrateExport(OauthProviderMixin, Export):
 
         return crate
 
-
     def collect_crate_data_for_selection (self, config, dataset_selection):
         data = {}
         for set_index in dataset_selection:
@@ -132,13 +134,11 @@ class ROCrateExport(OauthProviderMixin, Export):
             data[set_index] = dataset
         return data
 
-
     def get_text_from_item_list(self, values, set_index) -> str:
         for item in values:
             text = self.get_text(item, set_index=set_index)
             if text:
                 return text
-
 
     def get_text_values_by_dataset(self, dataset_config, set_index) -> dict:
         result = {}
@@ -155,7 +155,6 @@ class ROCrateExport(OauthProviderMixin, Export):
                 text = f"{key} #{str(set_index + 1)}"
             result[key] = text
         return result
-
 
     def get_text_values_from_project(self, project_config) -> dict:
         return {
