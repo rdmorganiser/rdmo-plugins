@@ -4,6 +4,7 @@ import tempfile
 
 import toml
 from django import forms
+from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
@@ -15,8 +16,10 @@ from rocrate.rocrate import ROCrate
 from rocrate.model.person import Person
 
 # Settings
-WEB_PREVIEW = False
-
+try:
+    WEB_PREVIEW = settings.ROCRATE_EXPORT_WEB_PREVIEW 
+except AttributeError:
+    WEB_PREVIEW = False
 
 class ROCrateExport(OauthProviderMixin, Export):
     class Form(forms.Form):
@@ -71,7 +74,8 @@ class ROCrateExport(OauthProviderMixin, Export):
             config = self.load_config("default.toml")
             dataset_selection = form.cleaned_data["dataset"]
             crate = self.get_rocrate(config, dataset_selection)
-        
+            temp_folder = Path(tempfile.gettempdir()) / "rocrate"
+
             if WEB_PREVIEW:
                 crate.write(temp_folder)
                 file_contents = json.loads(
@@ -83,13 +87,13 @@ class ROCrateExport(OauthProviderMixin, Export):
                 )
                 response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
                 return response
-            
+
             # zip export
             ZIP_FILE_NAME = "rocrate.zip"
             crate.write_zip (ZIP_FILE_NAME)
             response = HttpResponse(open(ZIP_FILE_NAME, 'rb'), content_type='application/zip')
             response['Content-Disposition'] = f'filename={ZIP_FILE_NAME}'
-            return response 
+            return response
 
         return render(
             self.request, "plugins/exports_rocrate.html", {"form": form}, status=200
