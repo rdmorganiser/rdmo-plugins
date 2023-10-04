@@ -21,6 +21,8 @@ try:
 except AttributeError:
     WEB_PREVIEW = False
 
+CONFIG_FILE = "rdmo-rocrate.toml"
+
 
 def load_config(file_name):
     toml_file = Path(__file__).parent / file_name
@@ -60,6 +62,9 @@ class ROCrateExport(Export):
         self.request.session[f"{self.class_name}.dataset_choices"] = dataset_choices
 
         form = self.Form(dataset_choices=dataset_choices)
+        if not dataset_choices:
+            response = self.get_rocrate_response()
+            return response
 
         return render(
             self.request,
@@ -77,38 +82,42 @@ class ROCrateExport(Export):
             return redirect("project", self.project.id)
 
         if form.is_valid():
-            config = load_config("default.toml")
-            dataset_selection = form.cleaned_data["dataset"]
-            crate = self.get_rocrate(config, dataset_selection)
-            temp_folder = Path(tempfile.gettempdir()) / "rocrate"
-
-            if WEB_PREVIEW:
-                crate.write(temp_folder)
-                file_contents = json.loads(
-                    Path(temp_folder / "ro-crate-metadata.json").read_text()
-                )
-                response = HttpResponse(
-                    json.dumps(file_contents, indent=2),
-                    content_type="application/json",
-                )
-                response["Content-Disposition"] = (
-                    'filename="%s.json"' % self.project.title
-                )
-                return response
-
-            # zip export
-            ZIP_FILE_NAME = slugify(self.project.title) + "_rocrate.zip"
-            crate.write_zip(ZIP_FILE_NAME)
-            response = FileResponse(
-                open(ZIP_FILE_NAME, "rb"), content_type="application/zip"
-            )
+            dataset_selection = form.cleaned_data.get("dataset", [])
+            response = self.get_rocrate_response(dataset_selection)
             return response
 
         return render(
             self.request, "plugins/exports_rocrate.html", {"form": form}, status=200
         )
 
-    def get_rocrate(self, config, dataset_selection):
+    def get_rocrate_response(self, dataset_selection=None) -> FileResponse:
+        config = load_config(CONFIG_FILE)
+        crate = self.create_rocrate(config, dataset_selection)
+
+        if WEB_PREVIEW:
+            temp_folder = Path(tempfile.gettempdir()) / "rocrate"
+            crate.write(temp_folder)
+            file_contents = json.loads(
+                Path(temp_folder / "ro-crate-metadata.json").read_text()
+            )
+            response = FileResponse(
+                json.dumps(file_contents, indent=2),
+                content_type="application/json",
+                as_attachment=False,
+            )
+            return response
+
+        # zip export
+        ZIP_FILE_NAME = slugify(self.project.title) + "_rocrate.zip"
+        crate.write_zip(ZIP_FILE_NAME)
+        response = FileResponse(
+            open(ZIP_FILE_NAME, "rb"),
+            as_attachment=True,
+            content_type="application/zip",
+        )
+        return response
+
+    def create_rocrate(self, config, dataset_selection=None):
         crate = ROCrate()
         crate.name = self.project.title
 
@@ -139,6 +148,8 @@ class ROCrateExport(Export):
 
     def collect_crate_data_for_selection(self, config, dataset_selection):
         data = {}
+        if dataset_selection is None:
+            return data
         for set_index in dataset_selection:
             dataset = self.get_text_values_by_dataset(config, set_index)
             data[set_index] = dataset
