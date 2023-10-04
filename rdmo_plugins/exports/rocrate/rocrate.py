@@ -17,9 +17,10 @@ from rocrate.model.person import Person
 
 # Settings
 try:
-    WEB_PREVIEW = settings.ROCRATE_EXPORT_WEB_PREVIEW 
+    WEB_PREVIEW = settings.ROCRATE_EXPORT_WEB_PREVIEW
 except AttributeError:
     WEB_PREVIEW = False
+
 
 def load_config(file_name):
     toml_file = Path(__file__).parent / file_name
@@ -61,9 +62,10 @@ class ROCrateExport(Export):
         form = self.Form(dataset_choices=dataset_choices)
 
         return render(
-                self.request, "plugins/exports_rocrate.html", 
-                {"form": form, "project_id": self.project.pk },
-                status=200
+            self.request,
+            "plugins/exports_rocrate.html",
+            {"form": form, "project_id": self.project.pk},
+            status=200,
         )
 
     def submit(self):
@@ -89,13 +91,17 @@ class ROCrateExport(Export):
                     json.dumps(file_contents, indent=2),
                     content_type="application/json",
                 )
-                response["Content-Disposition"] = 'filename="%s.json"' % self.project.title
+                response["Content-Disposition"] = (
+                    'filename="%s.json"' % self.project.title
+                )
                 return response
 
             # zip export
             ZIP_FILE_NAME = slugify(self.project.title) + "_rocrate.zip"
             crate.write_zip(ZIP_FILE_NAME)
-            response = FileResponse(open(ZIP_FILE_NAME, 'rb'), content_type='application/zip')
+            response = FileResponse(
+                open(ZIP_FILE_NAME, "rb"), content_type="application/zip"
+            )
             return response
 
         return render(
@@ -110,9 +116,13 @@ class ROCrateExport(Export):
         for key, value in project_config_text.items():
             setattr(crate, key, value)
 
-        datasets = self.collect_crate_data_for_selection (config.pop("dataset"), dataset_selection)
-        persons = self.collect_crate_data_for_selection (config.pop("dataset_person"), dataset_selection)
-  
+        datasets = self.collect_crate_data_for_selection(
+            config.pop("dataset"), dataset_selection
+        )
+        persons = self.collect_crate_data_for_selection(
+            config.pop("dataset_person"), dataset_selection
+        )
+
         rocrate_person_ids_by_dataset = {}
         for key, value in persons.items():
             ro_person = Person(crate, properties=value)
@@ -127,7 +137,7 @@ class ROCrateExport(Export):
 
         return crate
 
-    def collect_crate_data_for_selection (self, config, dataset_selection):
+    def collect_crate_data_for_selection(self, config, dataset_selection):
         data = {}
         for set_index in dataset_selection:
             dataset = self.get_text_values_by_dataset(config, set_index)
