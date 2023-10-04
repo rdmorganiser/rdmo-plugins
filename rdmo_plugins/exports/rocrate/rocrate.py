@@ -5,9 +5,10 @@ import tempfile
 import toml
 from django import forms
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
+from django.utils.text import slugify
 
 from rdmo.projects.exports import Export
 
@@ -19,7 +20,6 @@ try:
     WEB_PREVIEW = settings.ROCRATE_EXPORT_WEB_PREVIEW 
 except AttributeError:
     WEB_PREVIEW = False
-
 
 def load_config(file_name):
     toml_file = Path(__file__).parent / file_name
@@ -61,7 +61,9 @@ class ROCrateExport(Export):
         form = self.Form(dataset_choices=dataset_choices)
 
         return render(
-            self.request, "plugins/exports_rocrate.html", {"form": form}, status=200
+                self.request, "plugins/exports_rocrate.html", 
+                {"form": form, "project_id": self.project.pk },
+                status=200
         )
 
     def submit(self):
@@ -91,11 +93,9 @@ class ROCrateExport(Export):
                 return response
 
             # zip export
-            ZIP_FILE_NAME = "rocrate.zip"
-            crate.write_zip (ZIP_FILE_NAME)
-            response = HttpResponse(open(ZIP_FILE_NAME, 'rb'), content_type='application/zip')
-            response['Content-Disposition'] = f'filename={ZIP_FILE_NAME}'
-            # self.post(self.request, url, data)
+            ZIP_FILE_NAME = slugify(self.project.title) + "_rocrate.zip"
+            crate.write_zip(ZIP_FILE_NAME)
+            response = FileResponse(open(ZIP_FILE_NAME, 'rb'), content_type='application/zip')
             return response
 
         return render(

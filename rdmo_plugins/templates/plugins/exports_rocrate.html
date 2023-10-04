@@ -8,4 +8,12 @@
 
     {% bootstrap_form submit=_('Export RO-Crate') %}
 
+    <script>
+        document.getElementsByClassName("btn btn-primary")[0].addEventListener("click", myFunction);  
+        function myFunction() {
+            console.log("Exporting RO-Crate");
+            window.open("{% url 'project' project_id %}");
+        }
+    </script>
+
 {% endblock %}
