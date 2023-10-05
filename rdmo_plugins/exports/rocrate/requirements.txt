@@ -1,2 +1,2 @@
 rocrate==0.8.0
-toml==0.10.2
+tomli==2.0.1

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 
-import toml
+import tomli as toml
 from django import forms
 from django.conf import settings
 from django.http import HttpResponse, FileResponse
@@ -31,9 +31,8 @@ def load_config(file_name):
         return toml_dict
     except FileNotFoundError as exc:
         raise exc from exc
-    except Exception as exc:
-        # TODO add toml.TOMLDecodeError later
-        raise ValueError(
+    except toml.TOMLDecodeError as exc:
+        raise toml.TOMLDecodeError(
             "\nThe {} file is not a valid TOML file.\n\t{}".format(toml_file, exc)
         ) from exc
 
