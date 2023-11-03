@@ -1,7 +1,8 @@
 import mimetypes
 
 from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
+
 from rdmo.core.constants import VALUE_TYPE_DATETIME
 from rdmo.core.xml import get_ns_map, read_xml_file
 from rdmo.projects.imports import Import

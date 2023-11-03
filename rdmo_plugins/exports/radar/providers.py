@@ -3,8 +3,8 @@ import time
 from django import forms
 from django.conf import settings
 from django.shortcuts import redirect, render
-from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from rdmo.domain.models import Attribute
 from rdmo.projects.exports import Export
@@ -32,7 +32,7 @@ class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
             for dataset, radar_url in zip(dataset_choices, radar_urls):
                 set_index, label = dataset
                 if radar_url is not None:
-                    label += ' (Already exported to RADAR: <a href="{radar_url}" target="_blank">{radar_url}</a>)'.format(radar_url=radar_url)
+                    label += f' (Already exported to RADAR: <a href="{radar_url}" target="_blank">{radar_url}</a>)'
                 dataset_choices_with_radar_urls.append((set_index, mark_safe(label)))
 
             self.fields['dataset'].widget = forms.RadioSelect(choices=dataset_choices_with_radar_urls)
@@ -85,7 +85,7 @@ class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
             return render(self.request, 'plugins/exports_radar.html', {'form': form}, status=200)
 
     def get_get_url(self):
-        return '{}/radar/api/workspaces'.format(self.radar_url)
+        return f'{self.radar_url}/radar/api/workspaces'
 
     def get_success(self, request, response):
         workspace_choices = [
@@ -97,7 +97,7 @@ class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
         return redirect('project_export', self.get_from_session(request, 'project_id'), self.key)
 
     def get_post_url(self, workspace_id):
-        return '{}/radar/api/workspaces/{}/datasets'.format(self.radar_url, workspace_id)
+        return f'{self.radar_url}/radar/api/workspaces/{workspace_id}/datasets'
 
     def get_post_data(self, set_index):
         now = int(time.time())
@@ -125,9 +125,9 @@ class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
             set_index = self.get_from_session(self.request, 'set_index')
 
             if request.LANGUAGE_CODE == 'de':
-                radar_url = '{}/radar/de/dataset/{}'.format(self.radar_url, radar_id)
+                radar_url = f'{self.radar_url}/radar/de/dataset/{radar_id}'
             else:
-                radar_url = '{}/radar/en/dataset/{}'.format(self.radar_url, radar_id)
+                radar_url = f'{self.radar_url}/radar/en/dataset/{radar_id}'
 
             try:
                 attribute = Attribute.objects.get(path='project/dataset/radar_id')
@@ -166,11 +166,11 @@ class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
 
     @property
     def authorize_url(self):
-        return '{}/radar-backend/oauth/authorize'.format(self.radar_url)
+        return f'{self.radar_url}/radar-backend/oauth/authorize'
 
     @property
     def token_url(self):
-        return '{}/radar-backend/oauth/token'.format(self.radar_url)
+        return f'{self.radar_url}/radar-backend/oauth/token'
 
     @property
     def client_id(self):
