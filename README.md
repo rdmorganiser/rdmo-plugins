@@ -1,28 +1,35 @@
 # rdmo-plugins
 
-<!--- mdtoc: toc begin -->
+[![Python Versions](https://img.shields.io/pypi/pyversions/rdmo.svg?style=flat)](https://www.python.org/)
+[![Django Versions](https://img.shields.io/pypi/frameworkversions/django/rdmo)](https://pypi.python.org/pypi/rdmo/)
+[![License](https://img.shields.io/github/license/rdmorganiser/rdmo?style=flat)](https://github.com/rdmorganiser/rdmo/blob/master/LICENSE) \
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![CI Workflow Status](https://github.com/rdmorganiser/rdmo-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/rdmorganiser/rdmo-plugins/actions/workflows/ci.yml)
 
+<!--- mdtoc: toc begin -->
 1. [Synopsis](#synopsis)
 2. [Setup](#setup)
 3. [Other plugins](#other-plugins)
-   1. [RDMO Sensor AWI optionset plugin](#rdmo-sensor-awi-optionset-plugin)<!--- mdtoc: toc end -->
+   1. [RDMO Sensor AWI optionset plugin](#rdmo-sensor-awi-optionset-plugin)
+<!--- mdtoc: toc end -->
 
 ## Synopsis
 
 Import and export plugins for [RDMO](https://github.com/rdmorganiser/rdmo). Included are plugins for [maDMP](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard), [DataCite (Kernel 4.3)](https://schema.datacite.org/meta/kernel-4.3/), and the [Radar metadata schema](https://www.radar-service.eu/de/radar-schema).
 
-**Since the RDMO questionaires and the domain does not contain all information needed for maDMP, DataCite, or Radar, the exports will not produce valid files. We will fix this in the future.**
+**Since the RDMO questionnaires and the domain does not contain all information needed for maDMP, DataCite, or Radar, the exports will not produce valid files. We will fix this in the future.**
 
 Please visit the [RDMO documentation](https://rdmo.readthedocs.io/en/latest/plugins/index.html#project-export-plugins) for detailed information.
 
-Please note that the re3data plugin was moved to a [seperate repository](https://github.com/rdmorganiser/rdmo-re3data).
+Please note that the re3data plugin was moved to a [separate repository](https://github.com/rdmorganiser/rdmo-re3data).
 
 ## Setup
 
 Install the plugins in your RDMO virtual environment using pip (directly from GitHub):
 
 ```bash
-pip install git+https://github.com/rdmorganiser/rdmo-plugins
+python -m pip install git+https://github.com/rdmorganiser/rdmo-plugins
 ```
 
 Add the `rdmo_plugins` to the `INSTALLED_APPS` in `config/settings/local.py`:
