@@ -36,13 +36,13 @@ Add the `rdmo_plugins` to the `INSTALLED_APPS` in `config/settings/local.py`:
 
 ```python
 from . import INSTALLED_APPS
-INSTALLED_APPS = ['rdmo_plugins'] + INSTALLED_APPS
+INSTALLED_APPS = ["rdmo_plugins", *INSTALLED_APPS]
 ```
 
 Add the export plugins to the `PROJECT_EXPORTS` in `config/settings/local.py`:
 
 ```python
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from . import PROJECT_EXPORTS
 
 PROJECT_EXPORTS += [
@@ -57,7 +57,7 @@ PROJECT_EXPORTS += [
 Add the import plugins to the `PROJECT_IMPORTS` in `config/settings/local.py`:
 
 ```python
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from . import PROJECT_IMPORTS
 
 PROJECT_IMPORTS += [
