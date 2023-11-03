@@ -11,3 +11,6 @@ dist
 *.egg-info
 
 /env
+
+.pytest_cache
+.ruff_cache
