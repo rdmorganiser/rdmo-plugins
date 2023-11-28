@@ -2,6 +2,7 @@ import json
 from collections import defaultdict
 
 from django.http import HttpResponse
+
 from rdmo.projects.exports import Export
 
 
@@ -137,7 +138,7 @@ class MaDMPExport(Export):
         # dmp/title, dmp/created, dmp/modified, dmp/language
         dmp = defaultdict(list)
         dmp.update({
-            'title': 'maDMP for {}'.format(self.project.title),
+            'title': f'maDMP for {self.project.title}',
             'created': self.project.created.isoformat(),
             'modified': self.project.updated.isoformat(),
         })
@@ -149,16 +150,16 @@ class MaDMPExport(Export):
 
         # dmp/contributor
         for partner in self.get_set('project/partner/id'):
-            role = 'Contact person for {}'.format(partner.text)
+            role = f'Contact person for {partner.text}'
             contributor = self.get_person('project/partner/contact_person', set_index=partner.set_index, roles=[role])
             if contributor:
                 dmp['contributor'].append(contributor)
 
         for dataset in self.get_set('project/dataset/id'):
             for role, attribute in [
-                ('Responsible for backup for {}'.format(dataset.text), 'project/dataset/data_security/backup_responsible'),
-                ('Responsible for metadata for {}'.format(dataset.text), 'project/dataset/metadata/responsible_person'),
-                ('Responsible for PIDs for {}'.format(dataset.text), 'project/dataset/pids/responsible_person'),
+                (f'Responsible for backup for {dataset.text}', 'project/dataset/data_security/backup_responsible'),
+                (f'Responsible for metadata for {dataset.text}', 'project/dataset/metadata/responsible_person'),
+                (f'Responsible for PIDs for {dataset.text}', 'project/dataset/pids/responsible_person'),
             ]:
                 contributor = self.get_person(attribute, set_index=dataset.set_index, roles=[role])
                 if contributor:
@@ -270,7 +271,7 @@ class MaDMPExport(Export):
                     cost['value'] = 0
 
             if value.unit:
-                cost['description'] = '{} in {}'.format(title, value.unit)
+                cost['description'] = f'{title} in {value.unit}'
 
             # this is a hack to make 'Euro' work
             if value.unit.upper()[:3] in self.currency_codes:
@@ -418,6 +419,6 @@ class MaDMPExport(Export):
             dmp_dataset['type'] = dmp_type
 
         # dmp/dataset/title
-        dmp_dataset['title'] = self.get_text('project/dataset/id', dataset.set_index) or 'Dataset #{}'.format(dataset.set_index + 1)
+        dmp_dataset['title'] = self.get_text('project/dataset/id', dataset.set_index) or f'Dataset #{dataset.set_index + 1}'
 
         return dmp_dataset

@@ -1,4 +1,4 @@
-class RadarMixin(object):
+class RadarMixin:
 
     identifier_type_options = {
         'identifier_type/doi': 'DOI',
@@ -197,7 +197,7 @@ class RadarMixin(object):
         dataset['title'] =  \
             self.get_text('project/dataset/title', set_index=set_index) or \
             self.get_text('project/dataset/id', set_index=set_index) or \
-            'Dataset #{}'.format(set_index + 1)
+            f'Dataset #{set_index + 1}'
 
         # publisher
         publisher = \
@@ -255,7 +255,7 @@ class RadarMixin(object):
         dataset['title'] = \
             self.get_text('project/dataset/title', set_index=set_index) or \
             self.get_text('project/dataset/id', set_index=set_index) or \
-            'Dataset #{}'.format(set_index + 1)
+            f'Dataset #{set_index + 1}'
 
         # alternate_identifiers
         alternate_identifier_sets = self.get_set('project/dataset/alternate_identifier/identifier', set_prefix=str(set_index))
@@ -394,7 +394,7 @@ class RadarMixin(object):
         name_text = self.get_text(attribute + '/name', set_prefix=set_prefix, set_index=set_index)
         if name_text:
             name = {
-                '{}Name'.format(prefix): name_text,
+                f'{prefix}Name': name_text,
                 'nameType': self.get_option(self.name_type_options, attribute + '/name_type',
                                             set_prefix=set_prefix, set_index=set_index, default='Personal'),
             }
@@ -429,7 +429,7 @@ class RadarMixin(object):
             # affiliations
             affiliations = self.get_list(attribute + '/affiliation', set_prefix=set_prefix, set_index=set_index)
             if affiliations:
-                name['{}Affiliation'.format(prefix)] = affiliations[0]
+                name[f'{prefix}Affiliation'] = affiliations[0]
 
             return name
         else:

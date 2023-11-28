@@ -2,6 +2,7 @@ import zipfile
 from collections import defaultdict
 
 from django.http import HttpResponse
+
 from rdmo.core.exports import prettify_xml
 from rdmo.core.renderers import BaseXMLRenderer
 from rdmo.projects.exports import Export
@@ -374,7 +375,7 @@ class DataCiteExport(Export):
                 'title':
                     self.get_text('project/dataset/title', set_index=set_index) or
                     self.get_text('project/dataset/id', set_index=set_index) or
-                    'Dataset #{}'.format(set_index + 1)
+                    f'Dataset #{set_index + 1}'
             }]
 
             # publisher

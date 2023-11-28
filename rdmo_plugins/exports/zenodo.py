@@ -2,7 +2,7 @@ import logging
 
 from django import forms
 from django.conf import settings
-from django.shortcuts import reverse, redirect, render
+from django.shortcuts import redirect, render, reverse
 from django.utils.translation import gettext_lazy as _
 
 from rdmo.projects.exports import Export
@@ -73,15 +73,15 @@ class ZenodoExportProvider(OauthProviderMixin, Export):
 
     @property
     def authorize_url(self):
-        return '{}/oauth/authorize'.format(self.zenodo_url)
+        return f'{self.zenodo_url}/oauth/authorize'
 
     @property
     def token_url(self):
-        return '{}/oauth/token'.format(self.zenodo_url)
+        return f'{self.zenodo_url}/oauth/token'
 
     @property
     def deposit_url(self):
-        return '{}/api/deposit/depositions'.format(self.zenodo_url)
+        return f'{self.zenodo_url}/api/deposit/depositions'
 
     @property
     def redirect_path(self):
@@ -94,7 +94,7 @@ class ZenodoExportProvider(OauthProviderMixin, Export):
         title =  \
             self.get_text('project/dataset/title', set_index=set_index) or \
             self.get_text('project/dataset/id', set_index=set_index) or \
-            'Dataset #{}'.format(set_index + 1)
+            f'Dataset #{set_index + 1}'
 
         description = self.get_text('project/dataset/description', set_index=set_index)
 
