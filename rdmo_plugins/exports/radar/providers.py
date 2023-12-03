@@ -112,7 +112,7 @@ class RadarExportProvider(RadarMixin, Export, OauthProviderMixin):
                 "responsibleEmail": email,
                 "schema": {
                     "key": "RDDM",
-                    "version": "09"
+                    "version": "9.1"
                 }
             },
             'descriptiveMetadata': dataset

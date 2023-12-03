@@ -230,11 +230,11 @@ class RadarMixin:
             for subject_area in subject_areas:
                 if subject_area.is_true:
                     if subject_area.option:
-                        controlled_subject_area_name = self.controlled_subject_area_options.get(subject_area.option.path, 'Other')
+                        controlled_subject_area_name = self.controlled_subject_area_options.get(subject_area.option.uri_path, 'OTHER')
                     else:
-                        controlled_subject_area_name = 'Other'
+                        controlled_subject_area_name = 'OTHER'
 
-                    if controlled_subject_area_name == 'Other':
+                    if controlled_subject_area_name == 'OTHER':
                         dataset['subjectAreas']['subjectArea'].append({
                             'controlledSubjectAreaName': controlled_subject_area_name,
                             'additionalSubjectAreaName': subject_area.value
@@ -301,13 +301,13 @@ class RadarMixin:
             dataset['rights'] = []
             for rights in rights_list:
                 if rights.option:
-                    controlled_rights = self.controlled_rights_options.get(rights.option.path, 'Other')
+                    controlled_rights = self.controlled_rights_options.get(rights.option.uri_path, 'OTHER')
                 else:
-                    controlled_rights = 'Other'
+                    controlled_rights = 'OTHER'
 
                 dataset['rights'] = {
                     'controlledRights': controlled_rights,
-                    'additionalRights': rights.value if controlled_rights == 'Other' else None
+                    'additionalRights': rights.value if controlled_rights == 'OTHER' else None
                 }
 
         # rights holders
@@ -331,7 +331,7 @@ class RadarMixin:
         keywords = self.get_list('project/research_question/keywords')
         if keywords:
             dataset['keywords'] = {
-                'keyword': keywords
+                'keyword': [{'value': keyword} for keyword in keywords]
             }
 
         # contributors
