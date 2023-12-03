@@ -404,7 +404,6 @@ class RadarExport(Export):
         name_text = self.get_text(attribute + '/name', set_prefix=set_prefix, set_index=set_index)
         if name_text:
             name = {
-                f'{prefix}Name': name_text,
                 'nameType': self.get_option(self.name_type_options, attribute + '/name_type',
                                             set_prefix=set_prefix, set_index=set_index, default='Personal'),
             }
@@ -424,6 +423,9 @@ class RadarExport(Export):
             family_name = self.get_text(attribute + '/family_name', set_prefix=set_prefix, set_index=set_index)
             if family_name:
                 name['familyName'] = family_name
+
+            if not ('givenName' in name or 'familyName' in name):
+                name[f'{prefix}Name'] = name_text
 
             # identifier
             identifier = self.get_text(attribute + '/name_identifier', set_prefix=set_prefix, set_index=set_index)
