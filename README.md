@@ -1,79 +1,143 @@
-# rdmo-plugins
+# RDMO Plugins
 
-[![Python Versions](https://img.shields.io/pypi/pyversions/rdmo.svg?style=flat)](https://www.python.org/)
-[![Django Versions](https://img.shields.io/pypi/frameworkversions/django/rdmo)](https://pypi.python.org/pypi/rdmo/)
-[![License](https://img.shields.io/github/license/rdmorganiser/rdmo?style=flat)](https://github.com/rdmorganiser/rdmo/blob/master/LICENSE) \
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![CI Workflow Status](https://github.com/rdmorganiser/rdmo-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/rdmorganiser/rdmo-plugins/actions/workflows/ci.yml)
+This repository contains a list of the currently available [RDMO](https://rdmorganiser.github.io/) plugins.
 
-<!--- mdtoc: toc begin -->
-1. [Synopsis](#synopsis)
-2. [Setup](#setup)
-3. [Other plugins](#other-plugins)
-   1. [RDMO Sensor AWI optionset plugin](#rdmo-sensor-awi-optionset-plugin)
-<!--- mdtoc: toc end -->
+For additional information, please refer to the corresponding documentation at
+https://rdmo.readthedocs.io/en/latest/plugins/index.html.
 
-## Synopsis
 
-Import and export plugins for [RDMO](https://github.com/rdmorganiser/rdmo). Included are plugins for [maDMP](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard), [DataCite (Kernel 4.3)](https://schema.datacite.org/meta/kernel-4.3/), and the [Radar metadata schema](https://www.radar-service.eu/de/radar-schema).
+## Plugins maintained by RDMO
 
-**Since the RDMO questionnaires and the domain does not contain all information needed for maDMP, DataCite, or Radar, the exports will not produce valid files. We will fix this in the future.**
+### RDMO re3data plugin
 
-Please visit the [RDMO documentation](https://rdmo.readthedocs.io/en/latest/plugins/index.html#project-export-plugins) for detailed information.
+https://github.com/rdmorganiser/rdmo-plugins-re3data
 
-Please note that the re3data plugin was moved to a [separate repository](https://github.com/rdmorganiser/rdmo-re3data).
+The dynamic re3data optionset will query [re3data.org](https://www.re3data.org/) for repositories
+that match the research field of the project (as given by the `project/research_field/title` attribute).
 
-## Setup
 
-Install the plugins in your RDMO virtual environment using pip (directly from GitHub):
+### RDMO ORCID plugin
 
-```bash
-python -m pip install git+https://github.com/rdmorganiser/rdmo-plugins
-```
+https://github.com/rdmorganiser/rdmo-plugins-orcid
 
-Add the `rdmo_plugins` to the `INSTALLED_APPS` in `config/settings/local.py`:
+This plugin implements dynamic option set, that queries the expanded-search endpoint of the
+[ORCID public API](https://info.orcid.org/documentation/api-tutorials/api-tutorial-searching-the-orcid-registry/).
 
-```python
-from . import INSTALLED_APPS
-INSTALLED_APPS = ["rdmo_plugins", *INSTALLED_APPS]
-```
 
-Add the export plugins to the `PROJECT_EXPORTS` in `config/settings/local.py`:
+### RDMO ROR plugin
 
-```python
-from django.utils.translation import gettext_lazy as _
-from . import PROJECT_EXPORTS
+https://github.com/rdmorganiser/rdmo-plugins-ror
 
-PROJECT_EXPORTS += [
-    ('madmp', _('as maDMP JSON'), 'rdmo_plugins.exports.madmp.MaDMPExport'),
-    ('datacite-xml', _('as DataCite XML'), 'rdmo_plugins.exports.datacite.DataCiteExport'),
-    ('radar-xml', _('as RADAR XML'), 'rdmo_plugins.exports.radar.RadarExport'),
-    ('radar', _('directly to RADAR'), 'rdmo_plugins.exports.radar.RadarExportProvider'),
-    ('zenodo', _('directly to Zenodo'), 'rdmo_plugins.exports.zenodo.ZenodoExportProvider')
-]
-```
+This plugin implements dynamic option set, that queries the expanded-search endpoint of the
+[ROR API](https://ror.readme.io/docs/rest-api).
 
-Add the import plugins to the `PROJECT_IMPORTS` in `config/settings/local.py`:
 
-```python
-from django.utils.translation import gettext_lazy as _
-from . import PROJECT_IMPORTS
+### RDMO GND plugin
 
-PROJECT_IMPORTS += [
-    ('madmp', _('from maDMP'), 'rdmo_plugins.imports.madmp.MaDMPImport'),
-    ('datacite', _('from DataCite XML'), 'rdmo_plugins.imports.datacite.DataCiteImport'),
-    ('radar', _('from RADAR XML'), 'rdmo_plugins.imports.radar.RadarImport'),
-]
-```
+https://github.com/rdmorganiser/rdmo-plugins-gnd
 
-After restarting RDMO, the exports/imports should be usable for all projects.
+This plugin implements dynamic option set, that queries the API for the Gemeinsame Normdatei (GND)
+at https://lobid.org/gnd.
 
-## Other plugins
+
+### RDMO Wikidata plugin
+
+https://github.com/rdmorganiser/rdmo-plugins-wikidata
+
+This plugin implements dynamic option set, that queries the Wikidata Search API at https://www.wikidata.org/w/api.php.
+
+
+### RDMO maDMP plugin
+
+https://github.com/rdmorganiser/rdmo-plugins-madmp
+
+This repo contains two plugins to provide interoperability of [RDMO](https://github.com/rdmorganiser/rdmo)
+with the [RDA-DMP-Common-Standard (maDMP)](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard):
+
+* `rdmo_madmp.exports.MaDMPExport`, which lets users download their RDMO project as maDMP JSON metadata files,
+* `rdmo_madmp.exports.MaDMPExport`, which lets users import maDMP JSON metadata files into RDMO.
+
+
+### RDMO DataCite plugin
+
+https://github.com/rdmorganiser/rdmo-plugins-datacite
+
+This repo implements two plugins to provide interoperability of [RDMO](https://github.com/rdmorganiser/rdmo)
+with [DataCite](https://datacite.org/):
+
+* `rdmo_datacite.exports.DataCiteExport`, which lets users download their RDMO datasets
+  as DataCite XML metadata files (combined in one ZIP file),
+* `rdmo_datacite.imports.DataCiteImport`, which lets users import DataCite XML metadata
+  files into an **existing** RDMO project.
+
+
+### RDMO RADAR plugin
+
+https://github.com/rdmorganiser/rdmo-plugins-radar
+
+This repo implements several plugins to connect [RDMO](https://github.com/rdmorganiser/rdmo)
+with [RADAR](https://www.radar-service.eu/):
+
+* `rdmo_radar.exports.RadarExport`, which lets users download their RDMO datasets as RADAR-XML metadata files,
+* `rdmo_radar.exports.RadarExportProvider`, which lets push their RDMO datasets directly to RADAR,
+* `rdmo_radar.imports.RadarImport`, which lets users import RADAR-XML metadata files (exported from RADAR) into RDMO.
+
+The `RadarExportProvider` plugin uses [OAUTH 2.0](https://oauth.net/2/), so that users use
+their respective accounts in both systems.
+
+
+### RDMO Zenodo plugin
+
+https://github.com/rdmorganiser/rdmo-plugins-zenodo
+
+This plugin implements an [export provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#export-providers)
+for RDMO, which lets users push metadata from RDMO to Zenodo work packages. The plugin uses
+[OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems.
+It creates only the metadata in Zenodo, so that users need to upload the actual data on Zenodo themselfes.
+
+
+### RDMO GitHub plugin
+
+https://github.com/rdmorganiser/rdmo-plugins-github
+
+This repo implements two plugins for [RDMO](https://github.com/rdmorganiser/rdmo):
+
+* an [issue provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#issue-providers),
+  which lets users push their tasks from RDMO to GitHub issues.
+* a [project import plugins](https://rdmo.readthedocs.io/en/latest/plugins/index.html#project-import-plugins),
+  which can be used to import projects from (public or private)repos.
+
+The plugin uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems.
+
+
+### RDMO GitLab plugin
+
+https://github.com/rdmorganiser/rdmo-plugins-gitlab
+
+This repo implements two plugins for [RDMO](https://github.com/rdmorganiser/rdmo):
+
+* an [issue provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#issue-providers),
+  which lets users push their tasks from RDMO to GitLab issues.
+* a [project import plugins](https://rdmo.readthedocs.io/en/latest/plugins/index.html#project-import-plugins),
+  which can be used to import projects from (public or private)repos.
+
+The plugin uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems.
+
+
+### RDMO OpenProject plugin
+
+https://github.com/rdmorganiser/rdmo-plugins-openproject
+
+This plugin implements an [issue provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#issue-providers)
+for RDMO, which lets users push their tasks from RDMO to OpenProject work packages. The plugin uses
+[OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems.
+
+
+## Plugins contributed by the community
 
 ### RDMO Sensor AWI optionset plugin
 
-[https://github.com/hafu/rdmo-sensor-awi](https://github.com/hafu/rdmo-sensor-awi)
+https://github.com/hafu/rdmo-sensor-awi
 
 Queries the Sensor Information System of the Alfred-Wegener-Institut, Helmholtz-Zentrum für Polar- und Meeresforschung (AWI).
 
