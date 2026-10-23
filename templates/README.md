@@ -2,27 +2,12 @@
 
 This repository contains a list of the currently available [RDMO](https://rdmorganiser.github.io/) plugins.
 
-For additional information, please refer to the corresponding documentation at
-https://rdmo.readthedocs.io/en/latest/plugins/index.html.
+For additional information, please refer to the [corresponding documentation](https://rdmo.readthedocs.io/en/latest/plugins/index.html).
 
 ## Plugins maintained by RDMO
 
-{% for plugin in rdmorganiser -%}
-### {{ plugin.title }}
-
-{{ plugin.url }}
-
-{{ plugin.description|trim }}
-
-{% endfor -%}
+{{ rdmorganiser | markdown_table }}
 
 ## Plugins contributed by the community
 
-{% for plugin in shared -%}
-### {{ plugin.title }}
-
-{{ plugin.url }}
-
-{{ plugin.description|trim }}
-
-{% endfor -%}
+{{ shared | markdown_table }}
