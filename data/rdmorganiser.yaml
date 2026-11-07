@@ -1,0 +1,239 @@
+- title: ORCID
+  url: https://github.com/rdmorganiser/rdmo-plugins-orcid
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  - OptionSetProvider
+  description: Queries the expanded-search endpoint of the [ORCID public API](https://info.orcid.org/documentation/api-tutorials/api-tutorial-searching-the-orcid-registry/).
+
+- title: ROR
+  url: https://github.com/rdmorganiser/rdmo-plugins-ror
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  - OptionSetProvider
+  description: Queries the expanded-search endpoint of the [ROR API](https://ror.readme.io/docs/rest-api).
+
+- title: GND
+  url: https://github.com/rdmorganiser/rdmo-plugins-gnd
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  - OptionSetProvider
+  description: Queries the API for the Gemeinsame Normdatei (GND) at https://lobid.org/gnd.
+
+- title: Wikidata
+  url: https://github.com/rdmorganiser/rdmo-plugins-wikidata
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  - OptionSetProvider
+  description: Queries the Wikidata Search API at https://www.wikidata.org/w/api.php.
+
+- title: re3data
+  url: https://github.com/rdmorganiser/rdmo-plugins-re3data
+  maintainer: '@jochenklar'
+  status: inactive
+  type:
+  - OptionSetProvider
+  description: Queries [re3data.org](https://www.re3data.org/) for repositories that
+    match the research field of the project (as given by the `project/research_field/title`
+    attribute).
+
+- title: MESH
+  url: https://github.com/rdmorganiser/rdmo-plugins-mesh
+  maintainer: '@jochenklar'
+  status: outdated
+  type:
+  - OptionSetProvider
+  description: Dynamic MeSH optionset for RDMO.
+
+- title: maDMP
+  url: https://github.com/rdmorganiser/rdmo-plugins-madmp
+  maintainer: '@jochenklar'
+  status: inactive
+  type:
+  - Export
+  - Import
+  description: Provides interoperability of [RDMO](https://github.com/rdmorganiser/rdmo)
+    with the [RDA-DMP-Common-Standard (maDMP)](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard).
+
+- title: DataCite
+  url: https://github.com/rdmorganiser/rdmo-plugins-datacite
+  maintainer: '@jochenklar'
+  status: inactive
+  type:
+  - Export
+  - Import
+  description: Provides interoperability of [RDMO](https://github.com/rdmorganiser/rdmo)
+    with [DataCite](https://datacite.org/).
+
+- title: RADAR
+  url: https://github.com/rdmorganiser/rdmo-plugins-radar
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  - Export
+  description: Pushes metadata from RDMO to [RADAR](https://www.radar-service.eu/).
+    Users need to upload the actual data to Zenodo themselves. The export uses [OAUTH
+    2.0](https://oauth.net/2/), so that users use their respective accounts in both
+    systems.
+
+- title: Zenodo
+  url: https://github.com/rdmorganiser/rdmo-plugins-zenodo
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  - Export
+  description: Pushes metadata from RDMO to [Zenodo](https://zenodo.org). Users need
+    to upload the actual data to Zenodo themselves. Uses [OAUTH 2.0](https://oauth.net/2/),
+    so that users use their respective accounts in both systems.
+
+- title: OpenProject
+  url: https://github.com/rdmorganiser/rdmo-plugins-openproject
+  maintainer: '@jochenklar'
+  status: inactive
+  type:
+  - IssueProvider
+  description: Uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective
+    accounts in both systems.
+
+- title: GitHub
+  url: https://github.com/rdmorganiser/rdmo-plugins-github
+  status: active
+  type:
+  - IssueProvider
+  - Import
+  - Export
+  description: Uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective
+    accounts in both systems.
+
+- title: GitLab
+  url: https://github.com/rdmorganiser/rdmo-plugins-gitlab
+  status: active
+  type:
+  - IssueProvider
+  - Import
+  - Export
+  description: Uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective
+    accounts in both systems.
+
+- title: MAUS
+  url: https://github.com/rdmorganiser/rdmo-plugins-maus
+  status: active
+  description: SMP Plugins for RDMO, used by the GitHub and GitLab plugins
+
+- title: Chatbot
+  url: https://github.com/rdmorganiser/rdmo-plugins-chatbot
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  description: Implements a copilot-style chatbot that has access to all the project information already entered.
+
+- title: LLM Views
+  url: https://github.com/rdmorganiser/rdmo-plugins-llm-views
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  description: Provides functions for creating LLM-generated views from the project information entered in RDMO.
+
+- title: cff
+  url: https://github.com/rdmorganiser/rdmo-plugins-cff
+  maintainer: '@jwindeck'
+  status: active
+  type:
+  description: ''
+  hidden: true
+
+- title: coscine
+  url: https://github.com/rdmorganiser/rdmo-plugins-coscine
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  description: A Project Export Plugin that exports a JSON which is compatible with
+    the Coscine Project Import
+  hidden: true
+
+- title: dfg
+  url: https://github.com/rdmorganiser/rdmo-plugins-dfg
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  description: An Optionset Provider for the DFG Classification of Subject Areas and
+    Review Boards
+  hidden: true
+
+- title: generic-search
+  url: https://github.com/rdmorganiser/rdmo-plugins-generic-search
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  description: rdmo-plugins-generic-search
+  hidden: true
+
+- title: mardi-portal-request
+  url: https://github.com/rdmorganiser/rdmo-plugins-mardi-portal-request
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  description: MaRDI Portal request Plugin for Math DMP.
+  hidden: true
+
+- title: mardmo
+  url: https://github.com/rdmorganiser/rdmo-plugins-mardmo
+  maintainer: '@MarcoReidelbach'
+  status: active
+  type:
+  description: Plugin for the export from RDMO to the MaRDI Portal
+  hidden: true
+
+- title: mcp
+  url: https://github.com/rdmorganiser/rdmo-plugins-mcp
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  description: 'Prototype (WIP, pre-alpha version): A Plugin that adds a Model Context
+    Protocol (MCP) server and tools to the RDMO Chatbot'
+  hidden: true
+
+- title: rocrate
+  url: https://github.com/rdmorganiser/rdmo-plugins-rocrate
+  maintainer: '@jochenklar'
+  status: active
+  type:
+  description: RDMO Export Plugin for RO-Crate (https://w3id.org/ro/crate)
+  hidden: true
+
+- title: sensorsearch
+  url: https://github.com/rdmorganiser/rdmo-plugins-sensorsearch
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  description: Optionset Provider for Sensor registries and synchronization of metadata
+    for devices in the interview.
+  hidden: true
+
+- title: somef
+  url: https://github.com/rdmorganiser/rdmo-plugins-somef
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  description: RDMO Project Import plugin for SMPs using SOMEF
+  hidden: true
+
+- title: statistics
+  url: https://github.com/rdmorganiser/rdmo-plugins-statistics
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  description: Adds a page with charts of anonymous usage statistics for Projects
+    and Users. Also available via the API or a CLI export.
+  hidden: true
+
+- title: ts4nfdi
+  url: https://github.com/rdmorganiser/rdmo-plugins-ts4nfdi
+  maintainer: '@MyPyDavid'
+  status: active
+  type:
+  description: A Plugin to interact with the Terminology Services for the NFDI (TS4NFDI)
+  hidden: true

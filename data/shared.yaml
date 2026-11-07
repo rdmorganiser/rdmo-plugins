@@ -1,0 +1,9 @@
+- title: RDMO Sensor AWI optionset plugin
+  url: https://github.com/hafu/rdmo-sensor-awi
+  maintainer: ''
+  status: inactive
+  type:
+    - OptionSetProvider
+  description: >
+    Queries the Sensor Information System of the Alfred-Wegener-Institut, Helmholtz-Zentrum für Polar- und Meeresforschung (AWI).
+    This is an example plugin, to show how to gather information from other systems.

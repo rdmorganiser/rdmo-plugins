@@ -1,0 +1,176 @@
+{
+  "rdmorganiser": [
+    {
+      "title": "ORCID",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-orcid",
+      "maintainer": "@jochenklar",
+      "status": "active",
+      "type": [
+        "OptionSetProvider"
+      ],
+      "description": "Queries the expanded-search endpoint of the [ORCID public API](https://info.orcid.org/documentation/api-tutorials/api-tutorial-searching-the-orcid-registry/)."
+    },
+    {
+      "title": "ROR",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-ror",
+      "maintainer": "@jochenklar",
+      "status": "active",
+      "type": [
+        "OptionSetProvider"
+      ],
+      "description": "Queries the expanded-search endpoint of the [ROR API](https://ror.readme.io/docs/rest-api)."
+    },
+    {
+      "title": "GND",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-gnd",
+      "maintainer": "@jochenklar",
+      "status": "active",
+      "type": [
+        "OptionSetProvider"
+      ],
+      "description": "Queries the API for the Gemeinsame Normdatei (GND) at https://lobid.org/gnd."
+    },
+    {
+      "title": "Wikidata",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-wikidata",
+      "maintainer": "@jochenklar",
+      "status": "active",
+      "type": [
+        "OptionSetProvider"
+      ],
+      "description": "Queries the Wikidata Search API at https://www.wikidata.org/w/api.php."
+    },
+    {
+      "title": "re3data",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-re3data",
+      "maintainer": "@jochenklar",
+      "status": "inactive",
+      "type": [
+        "OptionSetProvider"
+      ],
+      "description": "Queries [re3data.org](https://www.re3data.org/) for repositories that match the research field of the project (as given by the `project/research_field/title` attribute)."
+    },
+    {
+      "title": "MESH",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-mesh",
+      "maintainer": "@jochenklar",
+      "status": "outdated",
+      "type": [
+        "OptionSetProvider"
+      ],
+      "description": "Dynamic MeSH optionset for RDMO."
+    },
+    {
+      "title": "maDMP",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-madmp",
+      "maintainer": "@jochenklar",
+      "status": "inactive",
+      "type": [
+        "Export",
+        "Import"
+      ],
+      "description": "Provides interoperability of [RDMO](https://github.com/rdmorganiser/rdmo) with the [RDA-DMP-Common-Standard (maDMP)](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard)."
+    },
+    {
+      "title": "DataCite",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-datacite",
+      "maintainer": "@jochenklar",
+      "status": "inactive",
+      "type": [
+        "Export",
+        "Import"
+      ],
+      "description": "Provides interoperability of [RDMO](https://github.com/rdmorganiser/rdmo) with [DataCite](https://datacite.org/)."
+    },
+    {
+      "title": "RADAR",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-radar",
+      "maintainer": "@MyPyDavid",
+      "status": "active",
+      "type": [
+        "Export"
+      ],
+      "description": "Pushes metadata from RDMO to [RADAR](https://www.radar-service.eu/). Users need to upload the actual data to Zenodo themselves. The export uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems."
+    },
+    {
+      "title": "Zenodo",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-zenodo",
+      "maintainer": "@jochenklar",
+      "status": "active",
+      "type": [
+        "Export"
+      ],
+      "description": "Pushes metadata from RDMO to [Zenodo](https://zenodo.org). Users need to upload the actual data to Zenodo themselves. Uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems."
+    },
+    {
+      "title": "OpenProject",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-openproject",
+      "maintainer": "@jochenklar",
+      "status": "inactive",
+      "type": [
+        "IssueProvider"
+      ],
+      "description": "Uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems."
+    },
+    {
+      "title": "GitHub",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-github",
+      "maintainer": "",
+      "status": "active",
+      "type": [
+        "IssueProvider",
+        "Import",
+        "Export"
+      ],
+      "description": "Uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems."
+    },
+    {
+      "title": "GitLab",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-gitlab",
+      "maintainer": "",
+      "status": "active",
+      "type": [
+        "IssueProvider",
+        "Import",
+        "Export"
+      ],
+      "description": "Uses [OAUTH 2.0](https://oauth.net/2/), so that users use their respective accounts in both systems."
+    },
+    {
+      "title": "MAUS",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-maus",
+      "maintainer": "",
+      "status": "active",
+      "type": [],
+      "description": "SMP Plugins for RDMO, used by the GitHub and GitLab plugins"
+    },
+    {
+      "title": "Chatbot",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-chatbot",
+      "maintainer": "@jochenklar",
+      "status": "active",
+      "type": [],
+      "description": "Implements a copilot-style chatbot that has access to all the project information already entered."
+    },
+    {
+      "title": "LLM Views",
+      "url": "https://github.com/rdmorganiser/rdmo-plugins-llm-views",
+      "maintainer": "@jochenklar",
+      "status": "active",
+      "type": [],
+      "description": "Provides functions for creating LLM-generated views from the project information entered in RDMO."
+    }
+  ],
+  "shared": [
+    {
+      "title": "RDMO Sensor AWI optionset plugin",
+      "url": "https://github.com/hafu/rdmo-sensor-awi",
+      "maintainer": "",
+      "status": "inactive",
+      "type": [
+        "OptionSetProvider"
+      ],
+      "description": "Queries the Sensor Information System of the Alfred-Wegener-Institut, Helmholtz-Zentrum für Polar- und Meeresforschung (AWI). This is an example plugin, to show how to gather information from other systems."
+    }
+  ]
+}
