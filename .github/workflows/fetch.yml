@@ -1,0 +1,40 @@
+name: Fetch repositories
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # every Monday at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - run: make fetch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: fetch-repos
+          base: main
+          commit-message: Add new repositories from the rdmorganiser organisation
+          title: Add new repositories from the rdmorganiser organisation
+          body: |
+            The weekly run of `make fetch` found new `rdmo-plugins-*` repositories.
+            The new entries are hidden, please fill in the type and remove `hidden` to show them in the README.
+          delete-branch: true
