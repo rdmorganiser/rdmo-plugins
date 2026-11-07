@@ -72,7 +72,6 @@
 
 - title: GitHub
   url: https://github.com/rdmorganiser/rdmo-plugins-github
-  maintainer: '@MPDL'
   status: active
   description: >
     The plugin implements an [issue provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#issue-providers),
@@ -83,7 +82,6 @@
 
 - title: GitLab
   url: https://github.com/rdmorganiser/rdmo-plugins-gitlab
-  maintainer: '@MPDL'
   status: active
   description: >
     The plugin implements an [issue provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#issue-providers),
