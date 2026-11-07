@@ -32,14 +32,15 @@ HEADERS = {
 }
 
 def load_data(path):
-    data = yaml.safe_load(path.read_text(encoding='utf-8'))
+    data = [row for row in yaml.safe_load(path.read_text(encoding='utf-8')) if not row.pop('hidden', False)]
     for row in data:
         if url := row.pop('url', None):
             row['title'] = f'[{row.get('title', '')}]({url})'
         if (maintainer := row.get('maintainer')) and maintainer.startswith('@'):
             row['maintainer'] = f'[{maintainer}](https://github.com/{maintainer.lstrip('@')})'
-        if plugin_types := row.get('type'):
-            row['type'] = ', '.join(f'[{t}]({DOCS_URL}#{TYPE_ANCHORS[t]})' for t in plugin_types)
+
+        plugin_types = row.get('type') or []
+        row['type'] = ', '.join(f'[{t}]({DOCS_URL}#{TYPE_ANCHORS[t]})' for t in plugin_types)
 
     return data
 
