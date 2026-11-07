@@ -6,4 +6,4 @@
     - OptionSetProvider
   description: >
     Queries the Sensor Information System of the Alfred-Wegener-Institut, Helmholtz-Zentrum für Polar- und Meeresforschung (AWI).
-    This is an example optionset plugin, to show how to gather information from other systems.
+    This is an example plugin, to show how to gather information from other systems.
