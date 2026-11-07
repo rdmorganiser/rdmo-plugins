@@ -2,6 +2,8 @@
   url: https://github.com/rdmorganiser/rdmo-plugins-orcid
   maintainer: '@jochenklar'
   status: active
+  type:
+    - OptionSetProvider
   description: >
     This plugin implements a dynamic option set that queries the expanded-search endpoint of the
     [ORCID public API](https://info.orcid.org/documentation/api-tutorials/api-tutorial-searching-the-orcid-registry/).
@@ -10,6 +12,8 @@
   url: https://github.com/rdmorganiser/rdmo-plugins-ror
   maintainer: '@jochenklar'
   status: active
+  type:
+    - OptionSetProvider
   description: >
     This plugin implements a dynamic option set that queries the expanded-search endpoint of the
     [ROR API](https://ror.readme.io/docs/rest-api).
@@ -18,6 +22,8 @@
   url: https://github.com/rdmorganiser/rdmo-plugins-gnd
   maintainer: '@jochenklar'
   status: active
+  type:
+    - OptionSetProvider
   description: >
     This plugin implements a dynamic option set that queries the API for the Gemeinsame Normdatei (GND)
     at https://lobid.org/gnd.
@@ -26,12 +32,16 @@
   url: https://github.com/rdmorganiser/rdmo-plugins-wikidata
   maintainer: '@jochenklar'
   status: active
+  type:
+    - OptionSetProvider
   description: >
     This plugin implements a dynamic option set that queries the Wikidata Search API at https://www.wikidata.org/w/api.php.
 
 - title: re3data
   url: https://github.com/rdmorganiser/rdmo-plugins-re3data
   status: inactive
+  type:
+    - OptionSetProvider
   description: >
     The dynamic re3data optionset will query [re3data.org](https://www.re3data.org/) for repositories
     that match the research field of the project (as given by the `project/research_field/title` attribute).
@@ -39,6 +49,9 @@
 - title: maDMP
   url: https://github.com/rdmorganiser/rdmo-plugins-madmp
   status: inactive
+  type:
+    - Export
+    - Import
   description: >
     This repo contains and export and an import plugin to provide interoperability of [RDMO](https://github.com/rdmorganiser/rdmo)
     with the [RDA-DMP-Common-Standard (maDMP)](https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard).
@@ -47,6 +60,9 @@
   url: https://github.com/rdmorganiser/rdmo-plugins-datacite
   maintainer: '@jochenklar'
   status: active
+  type:
+    - Export
+    - Import
   description: >
     This repo contains and export and an import plugin to provide interoperability of [RDMO](https://github.com/rdmorganiser/rdmo)
     with [DataCite](https://datacite.org/).
@@ -55,6 +71,8 @@
   url: https://github.com/rdmorganiser/rdmo-plugins-radar
   maintainer: '@MyPyDavid'
   status: active
+  type:
+    - Export
   description: >
     This repo implements several plugins to connect [RDMO](https://github.com/rdmorganiser/rdmo)
     with [RADAR](https://www.radar-service.eu/). The export plugin uses [OAUTH 2.0](https://oauth.net/2/), so that users use
@@ -64,6 +82,8 @@
   url: https://github.com/rdmorganiser/rdmo-plugins-zenodo
   maintainer: '@jochenklar'
   status: active
+  type:
+    - Export
   description: >
     This plugin implements an [export provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#export-providers)
     for RDMO, which lets users push metadata from RDMO to Zenodo. The plugin uses
@@ -73,6 +93,9 @@
 - title: GitHub
   url: https://github.com/rdmorganiser/rdmo-plugins-github
   status: active
+  type:
+    - IssueProvider
+    - Import
   description: >
     The plugin implements an [issue provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#issue-providers),
     which lets users push their tasks from RDMO to GitHub issues, and an
@@ -83,6 +106,9 @@
 - title: GitLab
   url: https://github.com/rdmorganiser/rdmo-plugins-gitlab
   status: active
+  type:
+    - IssueProvider
+    - Import
   description: >
     The plugin implements an [issue provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#issue-providers),
     which lets users push their tasks from RDMO to GitLab issues, and an
@@ -94,6 +120,8 @@
   url: https://github.com/rdmorganiser/rdmo-plugins-openproject
   maintainer: '@jochenklar'
   status: active
+  type:
+    - IssueProvider
   description: >
     This plugin implements an [issue provider](https://rdmo.readthedocs.io/en/latest/plugins/index.html#issue-providers)
     for RDMO, which lets users push their tasks from RDMO to OpenProject work packages. The plugin uses

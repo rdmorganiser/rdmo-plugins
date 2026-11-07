@@ -13,10 +13,20 @@ SHARED_PATH = BASE_PATH / 'data' / 'shared.yaml'
 TEMPLATE_PATH = BASE_PATH / 'templates' / 'README.md'
 OUTPUT_PATH = BASE_PATH / 'README.md'
 
+DOCS_URL = 'https://rdmo.readthedocs.io/en/latest/plugins/index.html'
+
+TYPE_ANCHORS = {
+    'Export': 'project-export-plugins',
+    'Import': 'project-import-plugins',
+    'OptionSetProvider': 'option-set-providers',
+    'IssueProvider': 'issue-providers'
+}
+
 HEADERS = {
     'title': 'Plugin',
     'maintainer': 'Maintainer',
     'status': 'Status',
+    'type': 'Type',
     'last_update': 'Last Update',
     'description': 'Description'
 }
@@ -28,6 +38,8 @@ def load_data(path):
             row['title'] = f'[{row.get('title', '')}]({url})'
         if (maintainer := row.get('maintainer')) and maintainer.startswith('@'):
             row['maintainer'] = f'[{maintainer}](https://github.com/{maintainer.lstrip('@')})'
+        if plugin_types := row.get('type'):
+            row['type'] = ', '.join(f'[{t}]({DOCS_URL}#{TYPE_ANCHORS[t]})' for t in plugin_types)
 
     return data
 
